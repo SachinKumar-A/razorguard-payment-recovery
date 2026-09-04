@@ -94,6 +94,12 @@ class Facts:
         self.caps = (self.stress or {}).get("settings", [])
         self.shipped_cap = (self.stress or {}).get("shipped")
 
+        self.sens = load("sensitivity") or {}
+        self.sens_cells = self.sens.get("cells", [])
+        self.harmful = self.sens.get("harmful_curves", [])
+        self.beneficial = self.sens.get("beneficial_curves", [])
+        self.worst_gap = self.sens.get("worst_relative_gap", 0.0)
+
 
 # ------------------------------------------------------------------- styling
 

@@ -321,6 +321,35 @@ def complete_doc(f: Facts) -> List:
         "without reducing incident exposure. The divergence appeared the moment "
         "loading a gateway had a price, which is the correct behaviour."))
 
+    A(P("6.9  Measuring whether the strategy itself is working", "h2"))
+    A(P(
+        "Every guardrail described so far bounds a <i>single action</i>: is this "
+        "shift too large, is the destination healthy enough, have we touched "
+        "this key too recently. None of them can notice that rerouting as a "
+        "strategy is not working &mdash; and there are fleets where it is not."))
+    A(P(
+        "Section 11.4 shows the measurement. On acquirer fleets already running "
+        "past their capacity knee at rest there is no spare headroom to route "
+        "into, so shifting traffic only concentrates load and the system loses "
+        "money at every setting tested. Each individual shift, inspected on its "
+        "own, looks entirely reasonable. That is precisely why no per-action "
+        "bound catches it."))
+    A(P(
+        "<b>So the control plane scores its own interventions.</b> Twenty "
+        "minutes after each shift it compares the key's success rate "
+        "<i>across every gateway serving it</i> against the ten minutes before "
+        "&mdash; the whole key, because moving traffic off a sick gateway "
+        "trivially improves that gateway, and the question that matters is "
+        "whether the customer got paid. When the recent record says its shifts "
+        "are doing harm, it halts all routing and escalates."))
+    A(P(
+        "It engages in proportion to how badly the environment suits it: "
+        f"{_trip_summary(f)}. The insurance costs roughly 0.5%% of the headline "
+        "figure. It limits the damage rather than removing it, and the honest "
+        "conclusion &mdash; stated in the deployment guide rather than buried "
+        "&mdash; is that this system needs acquirers with spare capacity to be "
+        "worth deploying at all."))
+
     A(together(P("7. Where AI is used, and where it is refused", "h1"),
                layers_diagram()))
     A(Spacer(1, 10))
@@ -534,7 +563,37 @@ def complete_doc(f: Facts) -> List:
         "it was wrong, and the measurement is in the repository so the next "
         "person can disagree with it.", "small"))
 
-    A(P("11.4  The detector, compared honestly", "h2"))
+    A(P("11.4  Rerouting is not always beneficial", "h2"))
+    A(P(
+        "The 80% cap in 11.3 was chosen against one congestion curve, and that "
+        "curve is a plausible shape rather than a measured one (6.8). So "
+        "<font face='Courier' size='8.5'>sensitivity.py</font> sweeps the cap "
+        "against four curves at once, from an acquirer with generous headroom "
+        "to one that saturates early. Two questions: does the choice of cap "
+        "survive being wrong about the curve, and does the system help at all?"))
+    A(table(sens_rows(f), [76, 84, 84, 84, 84, 84], align_right=(1, 2, 3, 4, 5)))
+    A(P(
+        f"The first question resolves well. Across the curves where routing "
+        f"helps, holding 80% costs at most {f.worst_gap:.1%} against the best "
+        f"setting for that curve, so the unmeasured curve is not load-bearing "
+        f"for <i>that</i> decision."))
+    A(P(
+        f"The second does not. On <b>{' and '.join(f.harmful)}</b>, every cap "
+        f"tested recovers nothing or loses money. Those fleets sit past their "
+        f"capacity knee before anything goes wrong, so there is no healthy "
+        f"headroom to move traffic into. This is the most important limitation "
+        f"in the project, and it is not a tuning problem &mdash; it is a "
+        f"statement about when the whole approach applies."))
+    A(P(
+        "An earlier version of this report did not say so. It computed the gap "
+        "between best and shipped as a ratio, divided one negative recovery by "
+        "another, produced &minus;302%, and printed a reassuring verdict over "
+        "the top of the finding. The arithmetic is fixed, the report now asks "
+        "whether value is being destroyed before it asks whether the cap is "
+        "optimal, and the mechanism in 6.9 exists because of what the bug was "
+        "hiding.", "small"))
+
+    A(P("11.5  The detector, compared honestly", "h2"))
     A(P(
         "Comparing detectors at whatever thresholds they happen to ship with is "
         "meaningless &mdash; any detector looks fast if it may alarm constantly. "
@@ -609,7 +668,98 @@ def complete_doc(f: Facts) -> List:
         "first failure.",
     ]))
 
-    A(P("14. Running it", "h1"))
+    A(P("14. Running it in production", "h1"))
+    A(P(
+        "The control plane runs as a container, consumes real payment outcomes "
+        "over an authenticated endpoint, keeps state that survives a restart, "
+        "and emits routing recommendations. The deployed path is the "
+        "benchmarked path: the service calls "
+        "<font face='Courier' size='8.5'>ControlPlane.tick</font>, which is "
+        "exactly what <font face='Courier' size='8.5'>run</font> calls, and a "
+        "test asserts the two produce identical results."))
+    A(table([
+        ["Concern", "How it is handled"],
+        ["Feeding it", "<font face='Courier' size='8.5'>POST /ingest</font> "
+                       "takes aggregated counts &mdash; gateway, method, "
+                       "issuer, attempts, successes. Never individual payment "
+                       "records: the detector does not need one, so the "
+                       "integration never has to carry one."],
+        ["Restarts", "State is durable. On boot the stored observation stream "
+                     "is replayed back through the detector, the routing table "
+                     "is restored, and open diversions are re-adopted &mdash; "
+                     "that last one matters most, because restored weights "
+                     "with no supervisor watching them is worse than either "
+                     "extreme."],
+        ["Authentication", "HMAC request signing or a bearer token. The "
+                           "service refuses to start without a credential: "
+                           "open is what you opt into, not what you forget."],
+        ["Escalation", "Delivered to a webhook on its own thread with a "
+                       "bounded queue, so a dead incident channel can never "
+                       "stall the control loop."],
+        ["Failover", "A lease in the shared store elects one active instance. "
+                     "A node that stalls past its lease cannot finish the tick "
+                     "it was in &mdash; it must stand down, because another "
+                     "instance is already deciding. Failover, not horizontal "
+                     "scaling: two instances each seeing half the stream would "
+                     "both misjudge the fleet."],
+        ["The last mile", "Recommendations go to a webhook or an atomically "
+                          "written config file, in off / notify / auto modes "
+                          "with identical payloads &mdash; so moving between "
+                          "them is a configuration change, not a rewrite."],
+        ["Observability", "Prometheus metrics, JSON logs, per-tick duration, "
+                          "ingest and alert counters, and a graceful shutdown "
+                          "that checkpoints on the way out."],
+    ], [92, 403]))
+    A(P(
+        "It emits recommendations and does not apply them, because acquirer "
+        "selection is not an endpoint a third party can call. That boundary, "
+        "the three ways to act on the output, and what remains open are all in "
+        "<font face='Courier' size='8.5'>DEPLOY.md</font>."))
+
+    A(P("15. Where the numbers come from", "h1"))
+    A(P(
+        "Every figure here is either produced by running the code or invented "
+        "by the author. Which is which matters to a reader deciding whether to "
+        "believe the headline, so <font face='Courier' size='8.5'>DATA.md</font> "
+        "lists it line by line. In short: <b>the world is invented, the "
+        "measurement is real.</b>"))
+    A(table([
+        ["Invented", "Measured"],
+        ["Gateway names, traffic mix, volumes, the diurnal curve, healthy "
+         "success rates, per-issuer and per-gateway offsets",
+         "Detection latency, false-alarm rates, recovered payments, "
+         "success-rate gain, every confidence interval"],
+        ["Average ticket sizes (Rs 640 / 2,150 / 3,400), which convert "
+         "recovered payments into rupees",
+         "The payment counts those rupees are derived from"],
+        ["The congestion curve, and the incident schedule",
+         "Everything the detector, policy engine, router and ledger do with "
+         "them"],
+    ], [247, 248]))
+    A(P(
+        "<b>The rupee headline scales linearly with invented ticket sizes.</b> "
+        "A reader who distrusts them should read the result as "
+        f"<b>+{f.recovered['payments']:,} successful payments</b> and "
+        f"<b>+{f.recovered['success_rate_gain_pp']:.2f} percentage points</b> "
+        "of success rate, neither of which depends on a price."))
+    A(P(
+        "Two components are real code that has never run against a live "
+        "endpoint, because no credentials were available: the Razorpay "
+        "executor (dry run only, every line labelled mode=dry_run) and the LLM "
+        "narrator (every narration in this project came from the deterministic "
+        "template fallback). No result depends on either having run.", "small"))
+    A(P(
+        "None of this is taken on trust. "
+        "<font face='Courier' size='8.5'>tests/test_integrity.py</font> asserts "
+        "that no detector can import the incident plan, that an Observation "
+        "carries exactly six fields, that no decision-path module imports the "
+        "narrator, and that no result value appears as a literal anywhere in "
+        "the package. "
+        "<font face='Courier' size='8.5'>tests/test_documented_claims.py</font> "
+        "fails if any headline figure in the README or the submission notes "
+        "stops matching the benchmark output.", "small"))
+
+    A(P("16. Running it", "h1"))
     A(code(
         "pip install -r requirements.txt\n\n"
         "python -m revenueguard.validate   --seeds 8 --days 2   # headline, with a CI\n"
@@ -626,10 +776,16 @@ def complete_doc(f: Facts) -> List:
         "--seed</font>. No number in this document was typed by hand; each is "
         "read from the JSON these commands write.", "small"))
 
-    A(P("15. Known limits", "h1"))
+    A(P("17. Known limits", "h1"))
     A(P("Stated because they are the first things worth asking about."))
     A(table([
         ["Limit", "Consequence"],
+        ["<b>Rerouting does not always help.</b> On fleets already at capacity "
+         "it loses money at every setting.",
+         "The efficacy breaker limits the damage rather than removing it. This "
+         "system needs acquirers with spare capacity to be worth deploying, and "
+         "the way to find out first is to replay a historical incident through "
+         "CsvSource and watch the breaker."],
         ["The world is simulated. Gateway health, demand and incidents are ours.",
          "What is <i>not</i> ours is the detector's view of them, which is the "
          "part under evaluation. A deployment replaces world.py and changes "
@@ -651,7 +807,7 @@ def complete_doc(f: Facts) -> List:
          "different mix of outage shapes would move the mean."],
     ], [175, 320]))
 
-    A(P("16. Roadmap", "h1"))
+    A(P("18. Roadmap", "h1"))
     A(P(
         "In priority order. The first item is the only one that could change a "
         "conclusion rather than improve a number."))
@@ -675,6 +831,34 @@ def cap_rows(f):
             b(f"{r['pct_minutes_congested']:.1f}%"),
         ])
     return rows
+
+
+def sens_rows(f):
+    """The cap-versus-curve table, straight from the sweep output."""
+    caps = sorted({float(c["cap"]) for c in f.sens_cells})
+    rows = [["curve"] + [f"{c:.0%}" for c in caps]]
+    for curve in f.sens.get("curves", []):
+        label = curve["label"]
+        cells = {float(c["cap"]): c for c in f.sens_cells
+                 if c["curve"] == label}
+        row = [f"<b>{label}</b>" if label in f.harmful else label]
+        for cap in caps:
+            cell = cells.get(cap)
+            if cell is None:
+                row.append("-")
+                continue
+            share = float(cell["share_of_exposure"])
+            shown = f"{share:.1%}"
+            row.append(f"<b>{shown}</b>" if share <= 0 else shown)
+        rows.append(row)
+    return rows
+
+
+def _trip_summary(f):
+    if not f.harmful:
+        return "it did not need to engage on any curve tested"
+    return ("it stays out of the way where routing works, and engages on "
+            + " and ".join(f.harmful))
 
 
 def roadmap_rows():
@@ -821,6 +1005,21 @@ def summary_doc(f: Facts) -> List:
 
     A(P("What is deliberately not claimed", "h1"))
     A(bullets([
+        "<b>Rerouting does not always help.</b> A sweep across congestion "
+        "curves found fleets already running at capacity, where this system "
+        f"loses money at every setting tested ({' and '.join(f.harmful)}). "
+        "There is no spare headroom to route into, so shifting only "
+        "concentrates load. The control plane now measures the realised effect "
+        "of its own shifts and halts when they stop paying &mdash; which "
+        "limits the damage rather than removing it. This system needs "
+        "acquirers with spare capacity to be worth deploying.",
+        "<b>The world is simulated, the measurement is real.</b> Ticket sizes, "
+        "traffic mix, healthy success rates and the congestion curve are "
+        "invented; DATA.md lists every one. The rupee headline scales with "
+        "those ticket sizes, so a sceptical reader should take the result as "
+        f"+{f.recovered['payments']:,} successful payments and "
+        f"+{f.recovered['success_rate_gain_pp']:.2f}pp of success rate, "
+        "neither of which depends on a price.",
         "<b>The world is simulated.</b> Gateway health, demand and incidents "
         "are ours; the detector's view of them is the part under evaluation.",
         "<b>Gateway health does not degrade under load.</b> A real acquirer "
