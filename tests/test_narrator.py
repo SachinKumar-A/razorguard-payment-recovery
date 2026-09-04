@@ -8,7 +8,6 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import pytest
 
 from revenueguard.config import GATEWAYS, ISSUERS, METHODS
 from revenueguard.narrator import (ClaudeNarrator, TemplateNarrator, _facts,
