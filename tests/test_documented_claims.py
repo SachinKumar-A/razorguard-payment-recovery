@@ -85,6 +85,10 @@ def _claims(results):
          plain(rec["payments"])),
         ("README.md", "shipped shift cap share of exposure",
          f"{shipped['share_of_exposure']:.1%}"),
+        ("README.md", "net recovery after processing fees",
+         indian(exp["net"]["net_inr"])),
+        ("README.md", "incremental processing fees",
+         indian(exp["net"]["incremental_cost_inr"])),
         ("SUBMIT.md", "validated mean recovery in the form text",
          indian(val["recovered_inr"]["mean"])),
     ] + _detector_claims(results)

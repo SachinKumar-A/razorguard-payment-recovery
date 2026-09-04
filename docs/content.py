@@ -404,6 +404,36 @@ def complete_doc(f: Facts) -> List:
         "can do is mislead a human who then reads the ledger themselves, which "
         "is the same risk any dashboard carries.", "small"))
 
+    A(P("7.2  Advising where the rulebook runs out", "h2"))
+    A(P(
+        "Hard bounds have a shape: they say <i>no</i> precisely, and they say "
+        "nothing else. When one fires, the system escalates with a correct "
+        "refusal and no next step &mdash; which leaves the engineer exactly "
+        "where they started."))
+    A(P(
+        "<font face='Courier' size='8.5'>advisor.py</font> runs on escalations "
+        "only. It investigates with the same read-only tools and returns one of "
+        "six recommendations &mdash; contact the issuer, add capacity, manual "
+        "reroute, pause automation, monitor, insufficient evidence &mdash; with "
+        "its reasoning and the evidence it cited. The action set is closed on "
+        "purpose: an open-ended recommendation is hard to act on and impossible "
+        "to audit."))
+    A(P(
+        "The division of labour is the point. <b>Choosing a destination</b> is "
+        "an argmax over two or three candidates with a confidence check; a "
+        "model there would be slower, non-reproducible and no more accurate, "
+        "and the audit ledger would stop being deterministic. <b>Deciding what "
+        "to do when routing cannot help</b> is judgement, because the useful "
+        "answer depends on the shape of the evidence &mdash; an issuer-side "
+        "fault wants somebody to call the issuer; a saturated fleet wants "
+        "capacity rather than cleverness. So the model gets the residual, and "
+        "arithmetic keeps the rest."))
+    A(P(
+        "Advice is recorded as advice, reaches the alert, and no routing "
+        "decision reads it. Without a model it falls back to the standing "
+        "runbook answer for that rule, which is the floor the model has to beat "
+        "to be worth calling.", "small"))
+
     A(together(P("8. The control loop", "h1"),
                control_loop_diagram()))
     A(Spacer(1, 12))
@@ -446,6 +476,11 @@ def complete_doc(f: Facts) -> List:
                          "evidence."],
         ["narrator.py", "Optional LLM prose over that attribution, with a "
                         "template fallback on every failure mode."],
+        ["economics.py", "MDR per route, and gross recovery net of what it "
+                         "cost. UPI is free by regulation; cards are not."],
+        ["advisor.py", "Recommends a course of action on the escalations the "
+                       "policy engine refuses - the residual the rulebook "
+                       "cannot answer."],
         ["investigator.py", "An agent that answers questions about a run using "
                             "four read-only tools over the ledger and the "
                             "observation stream. The one place a model is "
@@ -575,7 +610,30 @@ def complete_doc(f: Facts) -> List:
          f"{f.treat['audit_events']:,}"],
     ], [150, 60, 150, 60], header=False, align_right=(1, 3)))
 
-    A(P("11.3  The policy caps were costing 61% of the recovery", "h2"))
+    A(P("11.3  Net of what the recovery cost", "h2"))
+    A(P(
+        "Rerouting is not free. Acquirers price differently, so moving volume "
+        "changes what the merchant pays even when every payment succeeds. A "
+        "system reporting only gross recovery is ignoring one side of its own "
+        "ledger, and a payments company reads the other side first."))
+    A(table([
+        ["", "Amount"],
+        ["Gross recovered", rupees(f.net["gross_inr"])],
+        ["Incremental processing fees", rupees(f.net["incremental_cost_inr"])],
+        ["<b>Net recovered</b>", f"<b>{rupees(f.net['net_inr'])}</b>"],
+        ["Fees as a share of gross", f"{f.net['cost_ratio']:.1%}"],
+    ], [300, 195], align_right=(1,)))
+    A(P(
+        "The asymmetry underneath is specific to this market and worth knowing. "
+        "<b>UPI person-to-merchant carries zero MDR by regulation in India</b>, "
+        "so a UPI recovery is free and a card recovery is not. It falls out of "
+        "the arithmetic rather than being special-cased, and it means the "
+        "economics of a recovery depend on which method degraded. Two "
+        "quantities move the fee line in opposite directions: recovering more "
+        "payments means more fees to pay, which is the good kind of cost, while "
+        "moving volume between acquirers changes the rate either way."))
+
+    A(P("11.4  The policy caps were costing 61% of the recovery", "h2"))
     A(P(
         "<font face='Courier' size='8.5'>max_shift_fraction</font> was set to "
         "40% a priori, as the cautious choice, and defended in an earlier draft "
@@ -600,7 +658,7 @@ def complete_doc(f: Facts) -> List:
         "it was wrong, and the measurement is in the repository so the next "
         "person can disagree with it.", "small"))
 
-    A(P("11.4  Rerouting is not always beneficial", "h2"))
+    A(P("11.5  Rerouting is not always beneficial", "h2"))
     A(P(
         "The 80% cap in 11.3 was chosen against one congestion curve, and that "
         "curve is a plausible shape rather than a measured one (6.8). So "
@@ -630,7 +688,7 @@ def complete_doc(f: Facts) -> List:
         "optimal, and the mechanism in 6.9 exists because of what the bug was "
         "hiding.", "small"))
 
-    A(P("11.5  The detector, compared honestly", "h2"))
+    A(P("11.6  The detector, compared honestly", "h2"))
     A(P(
         "Comparing detectors at whatever thresholds they happen to ship with is "
         "meaningless &mdash; any detector looks fast if it may alarm constantly. "
@@ -684,7 +742,7 @@ def complete_doc(f: Facts) -> List:
 
     A(P("13. Testing", "h1"))
     A(P(
-        "180 property tests, all passing, and pyflakes clean. They are not "
+        "202 property tests, all passing, and pyflakes clean. They are not "
         "coverage theatre &mdash; each corresponds to a claim made in this "
         "document that would otherwise be taken on trust:"))
     A(bullets([
@@ -807,7 +865,7 @@ def complete_doc(f: Facts) -> List:
         "python -m revenueguard.narrate    --claude             # LLM note vs template\n"
         "python -m revenueguard.execute    --limit 6            # Razorpay test mode, dry run\n"
         "streamlit run app.py                                   # operator console\n\n"
-        "pytest -q                                              # 180 property tests"))
+        "pytest -q                                              # 202 property tests"))
     A(P(
         "Everything is deterministic under <font face='Courier' size='8.5'>"
         "--seed</font>. No number in this document was typed by hand; each is "
@@ -1012,6 +1070,16 @@ def summary_doc(f: Facts) -> List:
     A(together(P("Where AI is used", "h1"), layers_diagram()))
     A(Spacer(1, 8))
     A(P(
+        "There are two places a model is given real latitude, and both sit on "
+        "the explaining side of that line. <font face='Courier' size='8.5'>"
+        "advisor.py</font> runs when the policy engine refuses and escalates: "
+        "hard bounds say <i>no</i> precisely and say nothing else, so it "
+        "investigates the refusal and recommends one of six courses of action "
+        "for a human - contact the issuer, add capacity, manual reroute, pause "
+        "automation, monitor, insufficient evidence. Choosing a destination "
+        "stays arithmetic; deciding what to do when routing cannot help is "
+        "judgement, and only the second is given to a model."))
+    A(P(
         "There is one place a model is given real latitude, and it is on the "
         "explaining side of that line. <font face='Courier' size='8.5'>"
         "investigator.py</font> is an agent that answers "
@@ -1043,6 +1111,13 @@ def summary_doc(f: Facts) -> List:
         ["Rollbacks", f"{f.rbk['mean']:.1f}", f"{f.rbk['sd']:.1f}",
          f"{f.rbk['min']:.0f}", f"{f.rbk['max']:.0f}"],
     ], [143, 96, 88, 84, 84], align_right=(1, 2, 3, 4)))
+    A(P(
+        f"<b>Net of what it cost: {rupees(f.net['net_inr'])}.</b> Rerouting is "
+        f"not free - acquirers price differently, so incremental processing "
+        f"fees came to {rupees(f.net['incremental_cost_inr'])}, "
+        f"{f.net['cost_ratio']:.1%} of gross. UPI carries zero MDR by "
+        f"regulation in India, so a UPI recovery is free and a card recovery "
+        f"is not; the economics depend on which method degraded."))
     A(P(
         f"95% CI on mean recovery: <b>{rupees(f.rec['ci_lo'])} to "
         f"{rupees(f.rec['ci_hi'])}</b>, which excludes zero. Cross-checked "

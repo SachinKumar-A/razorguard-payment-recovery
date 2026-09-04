@@ -37,12 +37,14 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
+from .advisor import Advisor, escalations_in
 from .alerts import Alerter, alerts_from_ledger
 from .applier import ChangeTracker, build_from_env, recommendations_from
 from .config import METHOD_TICKET, METHODS
 from .control_plane import HISTORY_MIN, ControlPlane, RunOutcome
 from .detectors import default_detector
 from .ingest import BufferedSource, PaymentOutcome
+from .investigator import evidence_from_run
 from .persistence import Lease, Store, checkpoint
 from .policy import PolicyConfig, PolicyEngine
 from .security import AuthConfig, AuthError, verify
@@ -94,6 +96,8 @@ class Engine:
         self.source = BufferedSource(_ticket_for)
         self.applied = 0
         self.apply_failures = 0
+        self.advisor: Optional[Advisor] = None
+        self.advice_given = 0
 
         self.plane = ControlPlane(
             None, default_detector(),
@@ -149,6 +153,31 @@ class Engine:
         self.changes = ChangeTracker()
         self.minute = self._restore()
 
+    def _attach_advice(self, minute: int) -> None:
+        """Give a human something to do with a refusal, not just the refusal.
+
+        Advisory only: it is recorded as advice and reaches the alert, and no
+        routing decision reads it.
+        """
+        escalations = escalations_in(self.outcome.ledger, minute)
+        if not escalations:
+            return
+        if self.advisor is None:
+            self.advisor = Advisor(evidence_from_run(self.outcome))
+        else:
+            self.advisor.evidence = evidence_from_run(self.outcome)
+        for event in escalations:
+            try:
+                advice = self.advisor.advise(event)
+            except Exception as exc:
+                log.error("advisor failed on seq %d: %s", event.seq, exc)
+                continue
+            self.advice_given += 1
+            self.outcome.ledger.record(
+                minute, "decision", event.subject,
+                f"advice for the on-call engineer: {advice.summary()}",
+                rule="advice", decision="advice", **advice.as_evidence())
+
     def _push_recommendations(self) -> None:
         recs = recommendations_from(self.plane.routing, self.minute,
                                     reason="revenueguard recommendation")
@@ -173,6 +202,7 @@ class Engine:
                 f"tick failed: {type(exc).__name__}: {exc}",
                 rule="tick_error", decision="block")
         else:
+            self._attach_advice(self.minute)
             for alert in alerts_from_ledger(self.outcome.ledger, self.minute):
                 self.alerter.send(alert)
             if self.applier.mode != "off":
@@ -347,6 +377,10 @@ def state() -> Dict[str, object]:
             "mode": e.applier.mode,
             "delivered": e.applied,
             "failed": e.apply_failures,
+        },
+        "advice": {
+            "given": e.advice_given,
+            "model": (e.advisor.available if e.advisor else None),
         },
         "efficacy_breaker": {
             "open": e.plane.breaker_open,

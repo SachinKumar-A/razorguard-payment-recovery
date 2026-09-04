@@ -38,6 +38,13 @@
       "efficacy_breaker": 10
     }
   },
+  "net": {
+    "gross_inr": 12040620,
+    "incremental_cost_inr": 138653,
+    "net_inr": 11901967,
+    "cost_ratio": 0.0115,
+    "worth_doing": true
+  },
   "recovered": {
     "payments": 11452,
     "revenue_inr": 12040620,

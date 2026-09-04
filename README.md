@@ -49,6 +49,15 @@ One seed in detail (`python -m revenueguard.experiment`):
 | overall success rate | 93.04% | 93.62% | **+0.58pp** |
 | revenue | ₹240.43 cr | ₹241.64 cr | **+₹1.20 cr** |
 
+**Net of what the recovery cost: ₹1,19,01,967.** Rerouting is not free
+— acquirers price differently, so moving volume changes what the merchant pays.
+Incremental fees came to ₹1,38,653, 1.1% of gross.
+
+The asymmetry there is worth knowing: **UPI carries zero MDR by regulation in
+India**, so a UPI recovery is free and a card recovery is not. That falls out of
+the arithmetic rather than being special-cased, and it means the economics of a
+recovery depend on which method degraded.
+
 Cross-checked independently: measured recovery ₹1.20 cr, while incident exposure
 fell ₹1.27 cr. The ~5% gap is itself informative — it is largely the congestion
 the router *causes* at the destination, which costs revenue without reducing
@@ -196,7 +205,7 @@ python -m revenueguard.execute    --limit 6            # Razorpay test mode, dry
 streamlit run app.py                                   # operator console
 
 docker compose up --build                              # service + console
-pytest -q                                              # 180 property tests
+pytest -q                                              # 202 property tests
 ```
 
 Deterministic under `--seed`. Every figure below is copied from those commands'
@@ -263,6 +272,23 @@ there is no path from an answer back into a routing decision, and it is *as
 blind as the detector was* — it cannot import `scenarios.py`, so it reasons only
 from what the system actually saw. An investigator holding the answer key would
 be theatre. Tests enforce all three.
+
+**Advising — where the rulebook runs out.** Hard bounds say *no* precisely and
+say nothing else. When one fires, the system escalates with a correct refusal
+and no next step, which leaves a human exactly where they started.
+
+`advisor.py` runs on escalations only. It investigates with the same read-only
+tools and returns one of six recommendations — contact the issuer, add capacity,
+manual reroute, pause automation, monitor, insufficient evidence — with its
+reasoning and the evidence it cited.
+
+The division is deliberate. **Choosing a destination** is an argmax over two or
+three candidates with a confidence check: a model there would be slower,
+non-reproducible, and no more accurate — the ledger would stop being
+deterministic. **Deciding what to do when routing cannot help** is judgement,
+because the useful answer depends on the shape of the evidence. So the model
+gets the residual and the arithmetic keeps the rest. Advice is recorded as
+advice, reaches the alert, and no routing decision reads it.
 
 The LLM (`narrator.py`, Claude Opus 5) is handed the *finished* attribution and
 asked to write it as English for the operator console. It never sees raw
@@ -384,6 +410,8 @@ revenueguard/
   rootcause.py      deterministic lift-with-coverage attribution
   narrator.py       optional LLM prose over that attribution; template fallback
   investigator.py   agentic post-hoc investigation over the ledger, read-only
+  advisor.py        recommends a course of action where the policy escalates
+  economics.py      MDR per route; gross recovery net of what it cost
   policy.py         the bounds, the stopping rules, the reasons
   routing.py        weight table, canary floor, gradual restore
   control_plane.py  observe -> detect -> attribute -> gate -> act -> verify -> roll back
@@ -406,7 +434,7 @@ docs/               the two project PDFs, generated from bench/results
 DEPLOY.md           running it against real traffic, and what is still missing
 DATA.md             every invented constant, and which results depend on it
 SUBMIT.md           submission checklist, video script, panel prep
-tests/              180 property tests
+tests/              202 property tests
 ```
 
 `pyflakes` clean. No result value is hardcoded anywhere in `revenueguard/` —

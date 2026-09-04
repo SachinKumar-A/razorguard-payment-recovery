@@ -89,6 +89,7 @@ class Facts:
         self.ctrl = e["control"]
         self.treat = e["treatment"]
         self.recovered = e["recovered"]
+        self.net = e.get("net", {})
 
         # stress.json is optional; the caps section is skipped without it.
         self.caps = (self.stress or {}).get("settings", [])

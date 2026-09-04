@@ -21,6 +21,7 @@ from typing import Dict, List, Optional
 from .config import WorldConfig
 from .control_plane import ControlPlane, RunOutcome
 from .detectors import default_detector
+from .economics import net_recovery, processing_cost
 from .policy import PolicyConfig, PolicyEngine
 from .routing import CANARY_FLOOR
 from .scenarios import Incident, default_incident_plan
@@ -125,6 +126,26 @@ def report(control: RunOutcome, treat: RunOutcome, days: int,
               f"of a key moves per action and a")
         print(f"  {CANARY_FLOOR:.0%} canary always stays on the degraded gateway.")
 
+    net = net_recovery([o for o in control.observations],
+                       [o for o in treat.observations], d_rev, d_succ)
+    print()
+    print("  Net of what the recovery cost")
+    print("  " + "-" * (w - 4))
+    print(f"  {'gross recovered':32s} Rs {net.gross_inr:>14,.0f}")
+    print(f"  {'incremental processing fees':32s} Rs "
+          f"{net.incremental_cost_inr:>14,.0f}")
+    print(f"  {'NET recovered':32s} Rs {net.net_inr:>14,.0f}"
+          + ("" if net.worth_doing else "   <- routing cost more than it saved"))
+    if net.cost_ratio is not None:
+        print(f"  {'fees as a share of gross':32s} {net.cost_ratio:>17.1%}")
+    breakdown = processing_cost(treat.observations)
+    upi = breakdown.by_method.get("upi", 0.0)
+    print()
+    print("  UPI carries zero MDR by regulation in India, so a UPI recovery is")
+    print(f"  free: fees on {breakdown.successful_payments:,} successful payments "
+          f"came to Rs {breakdown.total:,.0f},")
+    print(f"  of which UPI contributed Rs {upi:,.0f}.")
+
     print()
     print("  Guardrails")
     print("  " + "-" * (w - 4))
@@ -173,6 +194,14 @@ def report(control: RunOutcome, treat: RunOutcome, days: int,
             "restores": treat.restores,
             "audit_events": len(treat.ledger),
             "blocked_by_rule": blocked,
+        },
+        "net": {
+            "gross_inr": round(net.gross_inr),
+            "incremental_cost_inr": round(net.incremental_cost_inr),
+            "net_inr": round(net.net_inr),
+            "cost_ratio": (round(net.cost_ratio, 4)
+                           if net.cost_ratio is not None else None),
+            "worth_doing": net.worth_doing,
         },
         "recovered": {
             "payments": d_succ,
