@@ -62,7 +62,6 @@ def _claims(results):
     exp = results["experiment"]
     rec = exp["recovered"]
     stress = results["stress"]
-    sens = results["sensitivity"]
     shipped = stress["shipped"]
 
     return [
