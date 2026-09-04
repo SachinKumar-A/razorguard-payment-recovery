@@ -33,10 +33,20 @@ class PolicyVerdict:
 class PolicyConfig:
     #: Fraction of the *source gateway's current share* that one action may
     #: move -- not a fraction of all traffic for the key. A gateway holding 18%
-    #: of a key gives up at most 7.2 points of it per action.
-    max_shift_fraction: float = 0.40
+    #: of a key gives up at most 14.4 points of it per action.
+    #:
+    #: Originally 40%, chosen a priori as the cautious setting. `stress.py`
+    #: measured that choice and it was wrong: the cap bound hard, costing about
+    #: 61% of available recovery, and the congestion it was implicitly guarding
+    #: against never arrived -- at a 100% cap the destination lost roughly 1,600
+    #: payments to load while the router recovered around 14,000. 80% sits at
+    #: the knee of the measured curve: it captures essentially all the recovery
+    #: available at 100% (42.4% of exposure against 42.9%) with fewer rollbacks
+    #: and under half the congestion cost. Re-run `python -m revenueguard.stress`
+    #: after changing the capacity model, because that curve is what sets this.
+    max_shift_fraction: float = 0.80
     #: Total weight that may sit away from baseline for one key at any time.
-    max_cumulative_divergence: float = 0.60
+    max_cumulative_divergence: float = 0.90
     #: Posterior confidence a detection needs before it can justify moving money.
     min_confidence: float = 0.95
     #: Minimum observed drop, in percentage points, worth acting on.

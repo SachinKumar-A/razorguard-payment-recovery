@@ -16,7 +16,7 @@ from typing import List, Tuple
 
 from .config import GATEWAYS, ISSUERS, METHODS, WorldConfig
 from .control_plane import ControlPlane
-from .detectors import PosteriorDropDetector
+from .detectors import default_detector
 from .narrator import ClaudeNarrator, TemplateNarrator, describe
 from .policy import PolicyConfig, PolicyEngine
 from .rootcause import RootCause, attribute
@@ -30,9 +30,8 @@ def collect(days: int, seed: int, limit: int) -> List[Tuple[int, RootCause, floa
     """Re-derive the attributions, keeping the alarm evidence each rested on."""
     incidents = default_incident_plan(days)
     world = World(WorldConfig(seed=seed), incidents)
-    detector = PosteriorDropDetector(min_drop_pp=3.0, confidence=0.99)
-    cp = ControlPlane(world, detector, policy=PolicyEngine(PolicyConfig()),
-                      enable_routing=True)
+    cp = ControlPlane(world, default_detector(),
+                      policy=PolicyEngine(PolicyConfig()), enable_routing=True)
 
     captured: List[Tuple[int, RootCause, float, float]] = []
     by_minute = {}

@@ -3,44 +3,46 @@
   "days": 2,
   "attempts": 1966458,
   "control": {
-    "successes": 1829528,
-    "success_rate": 0.930367,
-    "revenue_inr": 2404333730,
+    "successes": 1829522,
+    "success_rate": 0.930364,
+    "revenue_inr": 2404325620,
     "revenue_by_method": {
-      "upi": 740382080,
-      "card": 1071841650,
-      "netbanking": 592110000
+      "upi": 740379520,
+      "card": 1071839500,
+      "netbanking": 592106600
     }
   },
   "treatment": {
-    "successes": 1837575,
-    "success_rate": 0.934459,
-    "revenue_inr": 2413066710,
+    "successes": 1841236,
+    "success_rate": 0.936321,
+    "revenue_inr": 2416651080,
     "revenue_by_method": {
-      "upi": 744146560,
-      "card": 1075956750,
-      "netbanking": 592963400
+      "upi": 745972480,
+      "card": 1077657400,
+      "netbanking": 593021200
     },
-    "actions": 126,
-    "blocked": 9,
-    "escalated": 67,
-    "rollbacks": 29,
-    "restores": 488,
-    "audit_events": 1153,
+    "actions": 114,
+    "blocked": 23,
+    "escalated": 66,
+    "rollbacks": 39,
+    "restores": 561,
+    "audit_events": 1201,
     "blocked_by_rule": {
-      "max_causes_per_hour": 26,
-      "target_alarmed": 3,
-      "min_target_advantage": 8,
-      "no_healthy_destination": 9,
-      "action_cooldown": 1
+      "max_causes_per_hour": 15,
+      "min_target_advantage": 6,
+      "target_alarmed": 6,
+      "no_healthy_destination": 6,
+      "min_drop_pp": 12,
+      "action_cooldown": 4,
+      "canary_floor": 1
     }
   },
   "recovered": {
-    "payments": 8047,
-    "revenue_inr": 8732980,
-    "success_rate_gain_pp": 0.4092,
+    "payments": 11714,
+    "revenue_inr": 12325460,
+    "success_rate_gain_pp": 0.5957,
     "control_exposure_inr": 32298255,
-    "treatment_exposure_inr": 23695472,
-    "share_of_exposure_recovered": 0.2704
+    "treatment_exposure_inr": 19142214,
+    "share_of_exposure_recovered": 0.3816
   }
 }

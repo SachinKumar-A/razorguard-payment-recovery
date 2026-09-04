@@ -11,6 +11,13 @@ So here demand and health are separated:
     routing weights         -- which gateway each one is sent to. Ours to change.
     health(gateway, method, issuer) -- how many succeed. Happens to us.
 
+Gateways are not infinitely elastic
+-----------------------------------
+Health has two parts: what the gateway would do at rest, and what load does to
+it. Keeping them separate is what lets the router's own actions have a cost -
+diverting traffic onto a healthy gateway raises its utilisation, and a large
+enough diversion pushes it past its knee and degrades it. See `capacity.py`.
+
 Reproducibility across policies
 -------------------------------
 Comparing "router on" against "router off" is only meaningful if both runs face
@@ -22,12 +29,14 @@ would be partly luck. Here demand is bit-identical between runs by construction.
 """
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
-from .config import (GATEWAYS, ISSUER_SHARE, ISSUERS, METHOD_BASE_SR,
-                     METHOD_SHARE, METHOD_TICKET, METHODS, Slice, WorldConfig)
+from .capacity import CapacityModel, capacities
+from .config import (GATEWAY_SHARE, GATEWAYS, ISSUER_SHARE, ISSUERS,
+                     METHOD_BASE_SR, METHOD_SHARE, METHOD_TICKET, METHODS,
+                     Slice, WorldConfig)
 from .routing import RoutingTable
 from .scenarios import Incident
 from .simulator import Observation
@@ -46,14 +55,30 @@ GATEWAY_SR_JITTER = {"gw_alpha": 0.004, "gw_beta": 0.0, "gw_gamma": -0.007}
 
 
 class World:
-    def __init__(self, config: WorldConfig, incidents: List[Incident]):
+    def __init__(self, config: WorldConfig, incidents: List[Incident],
+                 capacity: Optional[CapacityModel] = None):
         self.config = config
         self.incidents = incidents
+        self.capacity_model = capacity if capacity is not None else CapacityModel()
         self.demand_per_min: Dict[Tuple[str, str], float] = {}
         for m in METHODS:
             for i in ISSUERS:
                 self.demand_per_min[(m, i)] = (
                     config.total_txn_per_min * METHOD_SHARE[m] * ISSUER_SHARE[i])
+        self.capacity = capacities(config.total_txn_per_min, GATEWAY_SHARE,
+                                   max(config.diurnal), self.capacity_model)
+        #: Congestion accounting, for reporting only. Never read by any
+        #: detector or policy - the system has to infer congestion from the
+        #: success rates it observes, exactly as it would in production.
+        #:
+        #: Peak utilisation alone is a poor summary: a small gateway's Poisson
+        #: noise puts a single minute above the knee without any sustained
+        #: load, and a lone minute at u=0.73 costs about a tenth of a percent.
+        #: `minutes_congested` and `success_lost_to_congestion` say whether
+        #: congestion actually did anything.
+        self.peak_utilisation: Dict[str, float] = {g: 0.0 for g in GATEWAYS}
+        self.minutes_congested: Dict[str, int] = {g: 0 for g in GATEWAYS}
+        self.success_lost_to_congestion: float = 0.0
 
     # -- environment ------------------------------------------------------
 
@@ -96,9 +121,20 @@ class World:
     # -- one tick ---------------------------------------------------------
 
     def step(self, minute: int, routing: RoutingTable) -> List[Observation]:
-        """Advance one minute under the given routing table."""
+        """Advance one minute under the given routing table.
+
+        Two passes, and the order matters. Congestion depends on how much
+        traffic a gateway is offered in total, which is not known until every
+        (method, issuer) key has been routed - so all the splitting happens
+        first, loads are summed per gateway, and only then are outcomes drawn.
+        Drawing outcomes inline during the first pass would price each slice
+        against a load that did not yet include its siblings.
+        """
         mult = self.volume_multiplier(minute)
-        out: List[Observation] = []
+
+        # Pass 1: route demand, and total the offered load per gateway.
+        routed: List[Tuple[str, str, str, int]] = []
+        offered: Dict[str, int] = {g: 0 for g in GATEWAYS}
 
         for method in METHODS:
             for issuer in ISSUERS:
@@ -118,17 +154,36 @@ class World:
                 for g, attempts in zip(gws, split):
                     if attempts == 0:
                         continue
-                    p = self.actual_sr(g, method, issuer, minute)
-                    orng = self._outcome_rng(minute, g, method, issuer)
-                    successes = int(orng.binomial(int(attempts), p))
-                    out.append(Observation(
-                        minute=minute,
-                        slice_key=Slice(g, method, issuer).key,
-                        method=method,
-                        attempts=int(attempts),
-                        successes=successes,
-                        avg_ticket_inr=METHOD_TICKET[method],
-                    ))
+                    routed.append((g, method, issuer, int(attempts)))
+                    offered[g] += int(attempts)
+
+        # Pass 2: price each gateway's congestion once, then draw outcomes.
+        congestion = {
+            g: self.capacity_model.factor(offered[g], self.capacity[g])
+            for g in GATEWAYS
+        }
+        for g in GATEWAYS:
+            u = self.capacity_model.utilisation(offered[g], self.capacity[g])
+            if u > self.peak_utilisation[g]:
+                self.peak_utilisation[g] = u
+            if u > self.capacity_model.knee:
+                self.minutes_congested[g] += 1
+
+        out: List[Observation] = []
+        for g, method, issuer, attempts in routed:
+            uncongested = self.actual_sr(g, method, issuer, minute)
+            p = uncongested * congestion[g]
+            self.success_lost_to_congestion += attempts * (uncongested - p)
+            orng = self._outcome_rng(minute, g, method, issuer)
+            successes = int(orng.binomial(attempts, float(np.clip(p, 0.0, 1.0))))
+            out.append(Observation(
+                minute=minute,
+                slice_key=Slice(g, method, issuer).key,
+                method=method,
+                attempts=attempts,
+                successes=successes,
+                avg_ticket_inr=METHOD_TICKET[method],
+            ))
         return out
 
     def counterfactual_healthy_successes(self, obs: Observation) -> float:

@@ -12,9 +12,9 @@ from typing import List
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from reportlab.platypus import PageBreak, Spacer, Table, TableStyle
+from reportlab.platypus import PageBreak, Spacer
 
-from build_docs import (ACCENT, Doc, Facts, INK, MUTED, OUT, P, S, bullets,
+from build_docs import (Doc, Facts, OUT, P, bullets,
                         code, control_loop_diagram, cover, kpis,
                         layers_diagram, measurement_diagram, rupees, table,
                         together)
@@ -163,8 +163,10 @@ def complete_doc(f: Facts) -> List:
     A(PageBreak())
     A(P("6. Technical approach, and why", "h1"))
     A(P(
-        "Seven decisions define this system. Each was taken against a more "
-        "obvious alternative, and the reasoning matters more than the choice."))
+        "Eight decisions define this system. Each was taken against a more "
+        "obvious alternative, and in two cases the measurement later "
+        "contradicted the choice and the code changed. Those two are the "
+        "most useful sections here."))
 
     A(P("6.1  Ground truth by injection, not by labelling", "h2"))
     A(P("<b>The alternative:</b> generate synthetic transactions, label some "
@@ -292,6 +294,33 @@ def complete_doc(f: Facts) -> List:
     A(Spacer(1, 6))
     A(measurement_diagram())
 
+    A(P("6.8  Gateways get worse as you push traffic at them", "h2"))
+    A(P(
+        "<b>The assumption that was wrong:</b> for most of this project the "
+        "simulator let the router move traffic onto a destination without the "
+        "destination noticing. That is the single most generous assumption a "
+        "router can be evaluated under &mdash; infinite headroom means shifting "
+        "harder is always free, and the rollback machinery never faces anything "
+        "but noise."))
+    A(P(
+        "<b>What is done instead:</b> each gateway has a capacity sized from its "
+        "own peak baseline load, and past a utilisation knee its success rate "
+        "falls roughly linearly with further load. Below the knee extra traffic "
+        "is free; at 100% of provisioned capacity a gateway loses about a tenth "
+        "of its success rate. Normal traffic sits well below the knee, so "
+        "congestion is something the router <i>causes</i> rather than a "
+        "permanent tax on the baseline &mdash; otherwise the control arm would "
+        "be degraded too and the comparison would measure the simulator's "
+        "headroom instead of the policy."))
+    A(P(
+        "The visible consequence is that the two independent measures of "
+        "recovery no longer agree as tightly. Before capacity existed, measured "
+        "recovery and the reduction in incident exposure agreed within 1.5%; "
+        "they now differ by around 7%. That gap is not error &mdash; it is the "
+        "congestion the router causes at the destination, which costs revenue "
+        "without reducing incident exposure. The divergence appeared the moment "
+        "loading a gateway had a price, which is the correct behaviour."))
+
     A(together(P("7. Where AI is used, and where it is refused", "h1"),
                layers_diagram()))
     A(Spacer(1, 10))
@@ -330,6 +359,9 @@ def complete_doc(f: Facts) -> List:
         ["Module", "Responsibility"],
         ["config.py", "The fleet: 3 gateways &times; 3 methods &times; 8 issuers, "
                       "with volume shares, healthy rates and average ticket."],
+        ["capacity.py", "Gateways degrade past a utilisation knee, so the "
+                        "router's own actions have a price and a large "
+                        "diversion can congest its destination."],
         ["scenarios.py", "Injected degradations &mdash; hard outage, gradual "
                          "slide, issuer fault, shallow drop &mdash; scheduled "
                          "across the diurnal cycle. The ground truth; detectors "
@@ -344,6 +376,9 @@ def complete_doc(f: Facts) -> List:
                                    "something honest to beat."],
         ["detectors/sequential.py", "Beta-posterior drop test with cohort "
                                     "shrinkage and a lagged baseline."],
+        ["detectors/ensemble.py", "The shipped union of the two, at the "
+                                  "operating point that won the matched "
+                                  "false-alarm comparison."],
         ["rootcause.py", "Deterministic lift-with-coverage attribution, with an "
                          "explicit refusal to name a secondary cause on thin "
                          "evidence."],
@@ -365,6 +400,8 @@ def complete_doc(f: Facts) -> List:
         ["experiment.py", "Control versus treatment for one seed."],
         ["validate.py", "Paired multi-seed validation with a confidence "
                         "interval."],
+        ["stress.py", "Sweeps the shift cap to ask whether the policy bounds "
+                      "are costing money. They were."],
         ["demo.py, narrate.py, execute.py", "Incident replay, narration "
                                             "comparison, execution CLI."],
         ["app.py", "Streamlit operator console."],
@@ -446,13 +483,22 @@ def complete_doc(f: Facts) -> List:
     ], [130, 122, 122, 121], align_right=(1, 2, 3)))
     gap = (f.recovered["control_exposure_inr"]
            - f.recovered["treatment_exposure_inr"])
+    diff = abs(gap - f.recovered["revenue_inr"]) / f.recovered["revenue_inr"]
     A(P(
         f"Cross-checked two independent ways: measured recovery came to "
         f"{rupees(f.recovered['revenue_inr'])}, while incident exposure fell "
         f"from {rupees(f.recovered['control_exposure_inr'])} to "
         f"{rupees(f.recovered['treatment_exposure_inr'])} &mdash; a reduction of "
-        f"{rupees(gap)}. Different quantities, computed by different code paths, "
-        f"agreeing within 1.5%."))
+        f"{rupees(gap)}, a difference of about {diff:.0%}."))
+    A(P(
+        "That gap is itself informative. Before gateways had capacity limits "
+        "these two numbers agreed within 1.5%; the divergence appeared the "
+        "moment loading a gateway had a price. It is the congestion the router "
+        "<i>causes</i> at the destination, which costs revenue without reducing "
+        "incident exposure &mdash; so the exposure measure, which only counts "
+        "money lost inside an incident window, now reads slightly optimistic. "
+        "The recovery figure is the conservative one of the two, and it is the "
+        "one quoted."))
     A(P("Guardrail activity in that run:"))
     A(table([
         ["Routing actions", f"{f.treat['actions']}", "Rollbacks",
@@ -463,7 +509,32 @@ def complete_doc(f: Facts) -> List:
          f"{f.treat['audit_events']:,}"],
     ], [150, 60, 150, 60], header=False, align_right=(1, 3)))
 
-    A(P("11.3  The detector, compared honestly", "h2"))
+    A(P("11.3  The policy caps were costing 61% of the recovery", "h2"))
+    A(P(
+        "<font face='Courier' size='8.5'>max_shift_fraction</font> was set to "
+        "40% a priori, as the cautious choice, and defended in an earlier draft "
+        "of this document by argument alone. The hypothesis was that section "
+        "6.8's capacity model would justify it: if shifting harder congests the "
+        "destination, the cap is not timidity but something close to an optimum. "
+        "<font face='Courier' size='8.5'>stress.py</font> measured that, and the "
+        "hypothesis was wrong."))
+    A(table(cap_rows(f), [72, 108, 84, 66, 74, 91], align_right=(1, 2, 3, 4, 5)))
+    A(P(
+        "The cap bound hard, and the congestion it was implicitly guarding "
+        "against never arrived &mdash; even at a 100% cap the destination lost "
+        "on the order of 700 payments to load against roughly 11,700 recovered. "
+        "The default moved to <b>80%</b>, the knee of the curve: it captures "
+        "nearly all the recovery available at 100% with less congestion, and "
+        "going further buys about 3% more for no clear gain. This is why the "
+        "headline figure is what it is; at the original setting it would have "
+        "been roughly two-fifths of the size."))
+    A(P(
+        "The general point matters more than the constant. A guardrail defended "
+        "only by argument is a guess with good manners. This one was measured, "
+        "it was wrong, and the measurement is in the repository so the next "
+        "person can disagree with it.", "small"))
+
+    A(P("11.4  The detector, compared honestly", "h2"))
     A(P(
         "Comparing detectors at whatever thresholds they happen to ship with is "
         "meaningless &mdash; any detector looks fast if it may alarm constantly. "
@@ -474,15 +545,25 @@ def complete_doc(f: Facts) -> List:
         ["Detector", "Detected", "Median time to detect"],
         ["fixed_threshold (floor 0.70, 3 min)", "16 / 18", "6.5 min"],
         ["posterior_drop (8 pp, conf 0.90)", "12 / 18", "3.5 min"],
+        ["<b>union (floor 0.70 + 5 pp / 0.99)</b>", "<b>16 / 18</b>",
+         "<b>5.0 min</b>"],
     ], [255, 120, 120], align_right=(1, 2)))
     A(P(
-        "<b>Neither dominates, and that is reported rather than hidden.</b> The "
-        "simple rule catches four more incidents; the posterior detector is "
-        "nearly twice as fast on what it catches, and its misses are all "
-        "<i>shallow</i> degradations &mdash; a threshold choice, not a modelling "
-        "failure. At its shipped default the simple rule reaches 18/18 in 3.5 "
-        "minutes while firing 581 false alarms, <b>168 per 1,000 slice-hours</b>. "
-        "It is unusable, and the number proving it sits in the same table."))
+        "<b>Neither single detector dominates, and that is what made the union "
+        "worth building.</b> The simple rule catches four incidents the "
+        "posterior detector misses &mdash; all <i>shallow</i> degradations it is "
+        "configured to ignore &mdash; while the posterior detector is nearly "
+        "twice as fast on what it does catch. Running both and taking the union "
+        "matches the best detection rate either reaches alone and is 1.5 minutes "
+        "faster than the member that reaches it."))
+    A(P(
+        "Both members run tighter inside the union than they would alone, "
+        "because false alarms add across members. That is the whole reason the "
+        "comparison is made at a matched budget: at its own shipped default the "
+        "simple rule reaches 18/18 in 3.5 minutes while firing 581 false alarms, "
+        "<b>168 per 1,000 slice-hours</b>. It is unusable, and the number "
+        "proving it sits in the same sweep. The union is shipped as "
+        "<font face='Courier' size='8.5'>detectors.default_detector()</font>."))
 
     A(P("12. Razorpay integration &mdash; honest scope", "h1"))
     A(P(
@@ -507,7 +588,7 @@ def complete_doc(f: Facts) -> List:
 
     A(P("13. Testing", "h1"))
     A(P(
-        "50 property tests, all passing, and pyflakes clean. They are not "
+        "67 property tests, all passing, and pyflakes clean. They are not "
         "coverage theatre &mdash; each corresponds to a claim made in this "
         "document that would otherwise be taken on trust:"))
     A(bullets([
@@ -539,7 +620,7 @@ def complete_doc(f: Facts) -> List:
         "python -m revenueguard.narrate    --claude             # LLM note vs template\n"
         "python -m revenueguard.execute    --limit 6            # Razorpay test mode, dry run\n"
         "streamlit run app.py                                   # operator console\n\n"
-        "pytest -q                                              # 50 property tests"))
+        "pytest -q                                              # 67 property tests"))
     A(P(
         "Everything is deterministic under <font face='Courier' size='8.5'>"
         "--seed</font>. No number in this document was typed by hand; each is "
@@ -553,10 +634,11 @@ def complete_doc(f: Facts) -> List:
          "What is <i>not</i> ours is the detector's view of them, which is the "
          "part under evaluation. A deployment replaces world.py and changes "
          "nothing else."],
-        ["Gateway health does not depend on load.",
-         "A real acquirer degrades further as traffic is pushed onto it, making "
-         "aggressive shifting partly self-defeating in a way this simulation "
-         "cannot punish. The most important missing dynamic."],
+        ["The congestion curve is a plausible shape, not a measured one.",
+         "Knee at 70% utilisation, about a tenth of the success rate lost at "
+         "100% of capacity. Chosen before the sweep rather than fitted to it, "
+         "but a real acquirer's curve would move the 80% shift cap that "
+         "depends on it. The most load-bearing unknown left."],
         [f"{f.shr['mean']:.0%} of exposure recovered, not 90%.",
          "Detection latency and the deliberate caps set that ceiling. Loosening "
          "either raises the number and lowers the confidence it deserves."],
@@ -577,39 +659,53 @@ def complete_doc(f: Facts) -> List:
     return st
 
 
+def cap_rows(f):
+    rows = [["shift cap", "recovered", "of exposure", "actions", "rollbacks",
+             "% minutes congested"]]
+    for r in f.caps:
+        shipped = (f.shipped_cap is not None
+                   and abs(r["shift"] - f.shipped_cap["shift"]) < 1e-9)
+        b = (lambda t: f"<b>{t}</b>") if shipped else (lambda t: t)
+        rows.append([
+            b(f"{r['shift']:.0%}"),
+            b(rupees(r["recovered_inr"])),
+            b(f"{r['share_of_exposure']:.1%}"),
+            b(f"{r['actions']:.0f}"),
+            b(f"{r['rollbacks']:.0f}"),
+            b(f"{r['pct_minutes_congested']:.1f}%"),
+        ])
+    return rows
+
+
 def roadmap_rows():
     return [
         ["#", "Item", "Why it matters"],
-        ["1", "Load-dependent gateway health",
-         "The one missing dynamic that could change a conclusion. Today the "
-         "router can shift traffic onto a destination without degrading it; a "
-         "real acquirer would push back. Until this exists the recovery figure "
-         "is an upper bound."],
-        ["2", "Sensitivity analysis over the policy configuration",
-         "Ten bounds are currently defended by argument, not measurement. A "
-         "sweep over each, reporting recovery and rollback rate, would show "
-         "which earn their place and which are superstition."],
-        ["3", "Cost of action",
+        ["1", "Cost of action",
          "Rerouting is not free: acquirer contracts carry volume commitments "
          "and per-transaction pricing differences. Netting that against "
          "recovered revenue turns a gross figure into a net one."],
-        ["4", "Detector ensemble",
-         "The benchmark already shows each detector catches incidents the other "
-         "misses. Running both and taking the union, evaluated at a matched "
-         "false-alarm rate, is the obvious next gain and is cheap."],
-        ["5", "Varied incident plans across seeds",
+        ["2", "Varied incident plans across seeds",
          "The current interval covers traffic randomness only. Randomising "
          "which incidents occur, and their depth and timing, would widen it "
          "honestly and make it a stronger claim."],
-        ["6", "Live-mode execution against a real test account",
+        ["3", "A measured congestion curve",
+         "The capacity model's knee and slope are a plausible shape, not an "
+         "observed one, and that curve is what sets the 80% shift cap. Fitting "
+         "it to real acquirer telemetry would move the cap and is the most "
+         "load-bearing unknown left."],
+        ["4", "Sensitivity analysis over the remaining bounds",
+         "The shift cap has now been measured and moved. The other nine are "
+         "still defended by argument. The same sweep applied to each would show "
+         "which earn their place."],
+        ["5", "Live-mode execution against a real test account",
          "The executor is written and unit-tested but has never run against "
          "Razorpay's servers, because no test credentials were available. One "
          "run would confirm the order shape and the notes limits."],
-        ["7", "Persistence and replay",
+        ["6", "Persistence and replay",
          "Runs are in-memory. Writing observations and the ledger to SQLite "
          "would let the console replay historical incidents without "
          "re-simulating, and is a prerequisite for anything long-running."],
-        ["8", "Alert delivery",
+        ["7", "Alert delivery",
          "Escalations currently end in the ledger. Routing them to a real "
          "channel with the incident note attached is small work and closes the "
          "operational loop."],

@@ -14,7 +14,7 @@ from typing import List
 
 from .config import METHOD_TICKET, WorldConfig
 from .control_plane import ControlPlane
-from .detectors import PosteriorDropDetector
+from .detectors import default_detector
 from .executor import (DryRunExecutor, ExecutionResult, RazorpayTestExecutor,
                        intents_from_ledger)
 from .policy import PolicyConfig, PolicyEngine
@@ -36,7 +36,7 @@ def main(argv=None) -> int:
 
     incidents = default_incident_plan(args.days)
     world = World(WorldConfig(seed=args.seed), incidents)
-    cp = ControlPlane(world, PosteriorDropDetector(min_drop_pp=3.0, confidence=0.99),
+    cp = ControlPlane(world, default_detector(),
                       policy=PolicyEngine(PolicyConfig()), enable_routing=True)
     out = cp.run(args.days * 24 * 60)
 

@@ -16,7 +16,7 @@ import streamlit as st
 
 from revenueguard.config import WorldConfig
 from revenueguard.control_plane import ControlPlane
-from revenueguard.detectors import PosteriorDropDetector
+from revenueguard.detectors import default_detector
 from revenueguard.experiment import exposure_inr
 from revenueguard.policy import PolicyConfig, PolicyEngine
 from revenueguard.scenarios import default_incident_plan
@@ -34,7 +34,7 @@ KIND_COLOUR = {
 def run(days: int, seed: int, routing: bool):
     incidents = default_incident_plan(days)
     world = World(WorldConfig(seed=seed), incidents)
-    cp = ControlPlane(world, PosteriorDropDetector(min_drop_pp=3.0, confidence=0.99),
+    cp = ControlPlane(world, default_detector(),
                       policy=PolicyEngine(PolicyConfig()), enable_routing=routing)
     out = cp.run(days * 24 * 60)
 

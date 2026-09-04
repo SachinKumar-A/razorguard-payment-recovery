@@ -16,7 +16,8 @@ import sys
 from typing import List, Optional, Tuple
 
 from .config import WorldConfig
-from .detectors import FixedThresholdDetector, PosteriorDropDetector
+from .detectors import (FixedThresholdDetector, PosteriorDropDetector,
+                        UnionDetector)
 from .metrics import BenchResult, evaluate
 from .scenarios import default_incident_plan
 from .simulator import Simulator
@@ -58,6 +59,19 @@ def operating_points() -> List[Tuple[str, callable]]:
                 lambda d=drop, c=conf: PosteriorDropDetector(
                     min_drop_pp=d, confidence=c),
             ))
+    # Union members are deliberately tighter than the same detector would be
+    # run alone: false alarms add across members, so each has to give some
+    # sensitivity back for the union to stay inside the same budget.
+    for floor, drop, conf in ((0.70, 5.0, 0.99), (0.75, 5.0, 0.999),
+                              (0.70, 8.0, 0.99), (0.75, 3.0, 0.999),
+                              (0.80, 8.0, 0.999)):
+        pts.append((
+            f"union floor={floor:.2f} drop={drop:.0f}pp conf={conf:<5g}",
+            lambda fl=floor, d=drop, c=conf: UnionDetector([
+                FixedThresholdDetector(sr_floor=fl, consecutive=3, cooldown_min=0),
+                PosteriorDropDetector(min_drop_pp=d, confidence=c, cooldown_min=0),
+            ]),
+        ))
     return pts
 
 
@@ -124,7 +138,7 @@ def main(argv=None) -> int:
           f"per 1,000 slice-hours:")
     print()
     verdict = {}
-    for fam in ("fixed", "posterior"):
+    for fam in ("fixed", "posterior", "union"):
         b = best_under_budget(rows, fam, args.budget)
         verdict[fam] = b
         if b is None:

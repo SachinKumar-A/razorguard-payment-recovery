@@ -157,6 +157,26 @@
       "fa_per_1k_slice_hours": 0.868
     },
     {
+      "label": "union floor=0.70 drop=5pp conf=0.99 ",
+      "family": "union",
+      "detected": 16,
+      "incidents": 18,
+      "median_ttd": 5.0,
+      "alarms": 185,
+      "false_alarms": 3,
+      "fa_per_1k_slice_hours": 0.868
+    },
+    {
+      "label": "union floor=0.70 drop=8pp conf=0.99 ",
+      "family": "union",
+      "detected": 16,
+      "incidents": 18,
+      "median_ttd": 6.0,
+      "alarms": 152,
+      "false_alarms": 3,
+      "fa_per_1k_slice_hours": 0.868
+    },
+    {
       "label": "posterior drop=3pp conf=0.99 ",
       "family": "posterior",
       "detected": 14,
@@ -187,6 +207,26 @@
       "fa_per_1k_slice_hours": 2.604
     },
     {
+      "label": "union floor=0.75 drop=5pp conf=0.999",
+      "family": "union",
+      "detected": 16,
+      "incidents": 18,
+      "median_ttd": 6.0,
+      "alarms": 192,
+      "false_alarms": 9,
+      "fa_per_1k_slice_hours": 2.604
+    },
+    {
+      "label": "union floor=0.75 drop=3pp conf=0.999",
+      "family": "union",
+      "detected": 16,
+      "incidents": 18,
+      "median_ttd": 5.0,
+      "alarms": 206,
+      "false_alarms": 9,
+      "fa_per_1k_slice_hours": 2.604
+    },
+    {
       "label": "posterior drop=5pp conf=0.9  ",
       "family": "posterior",
       "detected": 15,
@@ -209,6 +249,16 @@
     {
       "label": "fixed  floor=0.80 n=3 ",
       "family": "fixed",
+      "detected": 16,
+      "incidents": 18,
+      "median_ttd": 5.5,
+      "alarms": 252,
+      "false_alarms": 49,
+      "fa_per_1k_slice_hours": 14.178
+    },
+    {
+      "label": "union floor=0.80 drop=8pp conf=0.999",
+      "family": "union",
       "detected": 16,
       "incidents": 18,
       "median_ttd": 5.5,
@@ -297,6 +347,16 @@
       "alarms": 156,
       "false_alarms": 0,
       "fa_per_1k_slice_hours": 0.0
+    },
+    "union": {
+      "label": "union floor=0.70 drop=5pp conf=0.99 ",
+      "family": "union",
+      "detected": 16,
+      "incidents": 18,
+      "median_ttd": 5.0,
+      "alarms": 185,
+      "false_alarms": 3,
+      "fa_per_1k_slice_hours": 0.868
     }
   }
 }

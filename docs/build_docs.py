@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import json
 import os
-import sys
 from datetime import date
 from typing import Dict, List, Optional
 
@@ -20,7 +19,6 @@ from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import mm
 from reportlab.platypus import (BaseDocTemplate, Frame, KeepTogether,
                                 ListFlowable, ListItem, NextPageTemplate,
                                 PageBreak, PageTemplate, Paragraph, Preformatted,
@@ -65,6 +63,7 @@ class Facts:
         self.exp = load("experiment")
         self.val = load("validation")
         self.sweep = load("sweep")
+        self.stress = load("stress")
         missing = [n for n, v in (("experiment", self.exp), ("validation", self.val))
                    if v is None]
         if missing:
@@ -90,6 +89,10 @@ class Facts:
         self.ctrl = e["control"]
         self.treat = e["treatment"]
         self.recovered = e["recovered"]
+
+        # stress.json is optional; the caps section is skipped without it.
+        self.caps = (self.stress or {}).get("settings", [])
+        self.shipped_cap = (self.stress or {}).get("shipped")
 
 
 # ------------------------------------------------------------------- styling

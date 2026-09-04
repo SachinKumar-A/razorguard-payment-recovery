@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Tuple
 
 from .config import WorldConfig
 from .control_plane import ControlPlane, RunOutcome
-from .detectors import PosteriorDropDetector
+from .detectors import default_detector
 from .policy import PolicyConfig, PolicyEngine
 from .scenarios import Incident, default_incident_plan
 from .world import World
@@ -31,9 +31,8 @@ SYMBOL = {"detection": "!", "proposal": ">", "decision": "?", "action": "*",
 def _run(days: int, seed: int):
     incidents = default_incident_plan(days)
     world = World(WorldConfig(seed=seed), incidents)
-    detector = PosteriorDropDetector(min_drop_pp=3.0, confidence=0.99)
-    cp = ControlPlane(world, detector, policy=PolicyEngine(PolicyConfig()),
-                      enable_routing=True)
+    cp = ControlPlane(world, default_detector(),
+                      policy=PolicyEngine(PolicyConfig()), enable_routing=True)
     out = cp.run(days * 24 * 60)
     return cp, out, incidents, world
 

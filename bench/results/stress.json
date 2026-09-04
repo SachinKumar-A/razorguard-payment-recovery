@@ -1,0 +1,106 @@
+{
+  "config": {
+    "days": 2,
+    "seed": 7
+  },
+  "settings": [
+    {
+      "shift": 0.2,
+      "divergence": 0.4,
+      "valid": true,
+      "recovered_inr": 4147580.0,
+      "share_of_exposure": 0.12841498879534805,
+      "actions": 134,
+      "rollbacks": 26,
+      "escalated": 61,
+      "peak_utilisation": 0.7411468486029889,
+      "minutes_congested": 5,
+      "pct_minutes_congested": 0.1736111111111111,
+      "congestion_cost_txn": 4.18555587780217
+    },
+    {
+      "shift": 0.4,
+      "divergence": 0.6,
+      "valid": true,
+      "recovered_inr": 7820670.0,
+      "share_of_exposure": 0.24213909084866705,
+      "actions": 128,
+      "rollbacks": 32,
+      "escalated": 63,
+      "peak_utilisation": 0.7868339831059129,
+      "minutes_congested": 15,
+      "pct_minutes_congested": 0.5208333333333334,
+      "congestion_cost_txn": 58.17336005969778
+    },
+    {
+      "shift": 0.6,
+      "divergence": 0.8,
+      "valid": true,
+      "recovered_inr": 10452600.0,
+      "share_of_exposure": 0.32362739522378225,
+      "actions": 115,
+      "rollbacks": 32,
+      "escalated": 62,
+      "peak_utilisation": 0.7817576348278102,
+      "minutes_congested": 60,
+      "pct_minutes_congested": 2.0833333333333335,
+      "congestion_cost_txn": 337.0201864550085
+    },
+    {
+      "shift": 0.8,
+      "divergence": 0.9,
+      "valid": true,
+      "recovered_inr": 12325460.0,
+      "share_of_exposure": 0.3816138104141476,
+      "actions": 114,
+      "rollbacks": 39,
+      "escalated": 66,
+      "peak_utilisation": 0.8295070358187134,
+      "minutes_congested": 79,
+      "pct_minutes_congested": 2.7430555555555554,
+      "congestion_cost_txn": 707.4794384894116
+    },
+    {
+      "shift": 1.0,
+      "divergence": 0.97,
+      "valid": true,
+      "recovered_inr": 12700650.0,
+      "share_of_exposure": 0.3932302276131231,
+      "actions": 91,
+      "rollbacks": 37,
+      "escalated": 63,
+      "peak_utilisation": 0.8694832785087718,
+      "minutes_congested": 123,
+      "pct_minutes_congested": 4.270833333333333,
+      "congestion_cost_txn": 1149.2117256430688
+    }
+  ],
+  "shipped": {
+    "shift": 0.8,
+    "divergence": 0.9,
+    "valid": true,
+    "recovered_inr": 12325460.0,
+    "share_of_exposure": 0.3816138104141476,
+    "actions": 114,
+    "rollbacks": 39,
+    "escalated": 66,
+    "peak_utilisation": 0.8295070358187134,
+    "minutes_congested": 79,
+    "pct_minutes_congested": 2.7430555555555554,
+    "congestion_cost_txn": 707.4794384894116
+  },
+  "best": {
+    "shift": 1.0,
+    "divergence": 0.97,
+    "valid": true,
+    "recovered_inr": 12700650.0,
+    "share_of_exposure": 0.3932302276131231,
+    "actions": 91,
+    "rollbacks": 37,
+    "escalated": 63,
+    "peak_utilisation": 0.8694832785087718,
+    "minutes_congested": 123,
+    "pct_minutes_congested": 4.270833333333333,
+    "congestion_cost_txn": 1149.2117256430688
+  }
+}

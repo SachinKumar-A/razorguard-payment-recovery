@@ -20,7 +20,7 @@ from typing import Dict, List, Optional
 
 from .config import WorldConfig
 from .control_plane import ControlPlane, RunOutcome
-from .detectors import PosteriorDropDetector
+from .detectors import default_detector
 from .policy import PolicyConfig, PolicyEngine
 from .routing import CANARY_FLOOR
 from .scenarios import Incident, default_incident_plan
@@ -31,8 +31,8 @@ def _run(days: int, seed: int, enable_routing: bool,
          detector_kw: Optional[dict] = None):
     incidents = default_incident_plan(days)
     world = World(WorldConfig(seed=seed), incidents)
-    detector = PosteriorDropDetector(**(detector_kw or {}))
-    cp = ControlPlane(world, detector, policy=PolicyEngine(PolicyConfig()),
+    cp = ControlPlane(world, default_detector(),
+                      policy=PolicyEngine(PolicyConfig()),
                       enable_routing=enable_routing)
     return cp.run(days * 24 * 60), world, incidents
 
@@ -195,13 +195,10 @@ def main(argv=None) -> int:
                     help="write the treatment run's audit ledger as JSONL")
     args = ap.parse_args(argv)
 
-    # drop=3pp / conf=0.99 -- the best operating point under the false-alarm
-    # budget in the sweep. Chosen there, not tuned here.
-    kw = {"min_drop_pp": 3.0, "confidence": 0.99}
-    control, cworld, cinc = _run(args.days, args.seed, enable_routing=False,
-                                 detector_kw=kw)
-    treat, tworld, tinc = _run(args.days, args.seed, enable_routing=True,
-                               detector_kw=kw)
+    # The detector is fixed in detectors/default_detector(), chosen by the
+    # sweep rather than tuned here.
+    control, cworld, cinc = _run(args.days, args.seed, enable_routing=False)
+    treat, tworld, tinc = _run(args.days, args.seed, enable_routing=True)
 
     payload = report(control, treat, args.days,
                      exposure_inr(control, cworld, cinc),

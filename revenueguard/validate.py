@@ -27,7 +27,7 @@ from typing import Dict, List
 
 from .config import WorldConfig
 from .control_plane import ControlPlane
-from .detectors import PosteriorDropDetector
+from .detectors import default_detector
 from .experiment import exposure_inr
 from .policy import PolicyConfig, PolicyEngine
 from .scenarios import default_incident_plan
@@ -54,7 +54,7 @@ def _t95(df: int) -> float:
 def _one_arm(days: int, seed: int, routing: bool):
     incidents = default_incident_plan(days)
     world = World(WorldConfig(seed=seed), incidents)
-    cp = ControlPlane(world, PosteriorDropDetector(min_drop_pp=3.0, confidence=0.99),
+    cp = ControlPlane(world, default_detector(),
                       policy=PolicyEngine(PolicyConfig()), enable_routing=routing)
     out = cp.run(days * 24 * 60)
     return out, world, incidents
