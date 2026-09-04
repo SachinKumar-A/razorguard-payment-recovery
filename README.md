@@ -191,11 +191,12 @@ python -m revenueguard.bench      --days 2             # detector head-to-head
 python -m revenueguard.sweep      --budget 1.0         # matched false-alarm curve
 python -m revenueguard.sensitivity --days 2            # does the cap depend on a guess?
 python -m revenueguard.narrate    --claude             # LLM note vs template
+python -m revenueguard.investigate "why did traffic move at 03:12?"
 python -m revenueguard.execute    --limit 6            # Razorpay test mode, dry run
 streamlit run app.py                                   # operator console
 
 docker compose up --build                              # service + console
-pytest -q                                              # 163 property tests
+pytest -q                                              # 180 property tests
 ```
 
 Deterministic under `--seed`. Every figure below is copied from those commands'
@@ -235,9 +236,33 @@ with is how that gets hidden.
 
 ## Where AI is used, and where it is refused
 
-Root-cause attribution is **deterministic**: lift with coverage over the
-alarming population, ranked so an explanation missing half the alarms cannot win
-however high its lift.
+Two places, and the difference between them is the whole design.
+
+**Deciding — never.** Root-cause attribution is deterministic: lift with
+coverage over the alarming population, ranked so an explanation missing half the
+alarms cannot win however high its lift. A test asserts that `policy.py`,
+`routing.py`, `control_plane.py` and `audit.py` cannot even import a model.
+A sampled token in the path of a money-moving action cannot be reproduced,
+reviewed, or defended.
+
+**Explaining — genuinely agentic.** `investigator.py` answers the question an
+on-call engineer actually asks:
+
+```bash
+python -m revenueguard.investigate "why did traffic move off gw_beta at 03:12, and did it help?"
+```
+
+Claude gets four read-only tools over the run — search the audit ledger, pull
+per-minute traffic for a slice, check a key's health across *every* gateway
+serving it, and rank slices worst-first — and decides for itself what to query,
+reading results and following up until it can answer. Multi-step tool use, not
+a fixed report with a model stapled to the end.
+
+It is safe for the same reason it is useful: **every tool reads, none write**,
+there is no path from an answer back into a routing decision, and it is *as
+blind as the detector was* — it cannot import `scenarios.py`, so it reasons only
+from what the system actually saw. An investigator holding the answer key would
+be theatre. Tests enforce all three.
 
 The LLM (`narrator.py`, Claude Opus 5) is handed the *finished* attribution and
 asked to write it as English for the operator console. It never sees raw
@@ -358,6 +383,7 @@ revenueguard/
   detectors/        fixed threshold; Beta-posterior drop; the shipped union
   rootcause.py      deterministic lift-with-coverage attribution
   narrator.py       optional LLM prose over that attribution; template fallback
+  investigator.py   agentic post-hoc investigation over the ledger, read-only
   policy.py         the bounds, the stopping rules, the reasons
   routing.py        weight table, canary floor, gradual restore
   control_plane.py  observe -> detect -> attribute -> gate -> act -> verify -> roll back
@@ -380,7 +406,7 @@ docs/               the two project PDFs, generated from bench/results
 DEPLOY.md           running it against real traffic, and what is still missing
 DATA.md             every invented constant, and which results depend on it
 SUBMIT.md           submission checklist, video script, panel prep
-tests/              163 property tests
+tests/              180 property tests
 ```
 
 `pyflakes` clean. No result value is hardcoded anywhere in `revenueguard/` —

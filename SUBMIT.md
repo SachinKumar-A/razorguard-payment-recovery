@@ -17,13 +17,13 @@ because that is what a reviewer will have.
 git clone <your-repo-url> && cd razorpay
 pip install -r requirements-dev.txt
 
-pytest -q                                    # expect: 163 passed
+pytest -q                                    # expect: 180 passed
 python -m revenueguard.validate --seeds 8 --days 2
 python -m revenueguard.experiment --days 2
 streamlit run app.py                         # expect: console loads
 ```
 
-- [ ] 163 tests pass
+- [ ] 180 tests pass
 - [ ] `validate` reports a CI that excludes zero and 0/8 losing seeds
 - [ ] `experiment` prints **identical attempts in both arms** (if it does not,
       it refuses to report a figure — that is the guard working, but fix it
@@ -180,13 +180,24 @@ curl localhost:8000/routing
 
 **4:40–5:00 — where AI sits, and close**
 
+```bash
+python -m revenueguard.investigate "why did traffic move off gw_beta at 03:12, and did it help?"
+```
+
+> "And this is where a model earns its place. It gets four read-only tools over
+> the run and works out for itself what to look at — finds the ledger entries,
+> pulls the traffic, checks whether the shift actually helped across every
+> gateway, and answers. Multi-step, model-driven. But every tool reads and none
+> write, and it can't see the incident plan either — so it's reasoning from
+> exactly what the system saw."
+
 > "Attribution is deterministic — lift with coverage. The language model is
 > handed the finished attribution and writes it in English for the console. It
 > never decides, and a test asserts no decision-path module even imports it. A
 > sampled token in the path of a money-moving action can't be reproduced or
 > defended.
 >
-> 163 property tests. Every number in the README is printed by a command in the
+> 180 property tests. Every number in the README is printed by a command in the
 > repo — none of it is typed by hand."
 
 **Do not** show: the Streamlit console (it's slower than the CLI and says less),

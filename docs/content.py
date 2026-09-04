@@ -371,6 +371,39 @@ def complete_doc(f: Facts) -> List:
         "disables itself after the first failure, so a missing key costs one "
         "failed round trip rather than one per alarming slice."))
 
+    A(P("7.1  The one place a model is given latitude", "h2"))
+    A(P(
+        "Keeping the model out of every decision is the right call, and it is "
+        "not the whole story &mdash; because there is a job here a model is "
+        "genuinely better at than a dashboard. The question an on-call engineer "
+        "asks at 03:12 is not <i>what is the success rate</i>. It is <i>why did "
+        "this thing move my traffic, and was it right?</i> Answering that means "
+        "reading a thousand-row ledger, cross-referencing the observation "
+        "stream, and holding several windows in your head at once."))
+    A(P(
+        "<font face='Courier' size='8.5'>investigator.py</font> is an agent for "
+        "exactly that. It is handed four read-only tools over a completed run "
+        "&mdash; search the audit ledger, pull per-minute traffic for a slice, "
+        "measure a key's health across every gateway serving it, rank slices "
+        "worst-first &mdash; and decides for itself what to query, reading "
+        "results and following up until it can answer. Multi-step and "
+        "model-driven, rather than a fixed report with a language model stapled "
+        "to the end."))
+    A(P(
+        "Three properties make that safe rather than a contradiction of "
+        "everything above, and each is enforced by a test rather than promised. "
+        "<b>Every tool reads and none write.</b> <b>No decision-path module "
+        "imports it</b>, so there is no route from an answer back into routing. "
+        "And it is <b>as blind as the detector was</b>: it cannot import the "
+        "incident plan, so it reasons only from what the system actually "
+        "observed. An investigator holding the answer key would be theatre."))
+    A(P(
+        "The distinction that matters is direction of travel. The control plane "
+        "<i>decides</i>, and must be reproducible. The investigator "
+        "<i>explains, after the fact</i> &mdash; and the worst a wrong answer "
+        "can do is mislead a human who then reads the ledger themselves, which "
+        "is the same risk any dashboard carries.", "small"))
+
     A(together(P("8. The control loop", "h1"),
                control_loop_diagram()))
     A(Spacer(1, 12))
@@ -413,6 +446,10 @@ def complete_doc(f: Facts) -> List:
                          "evidence."],
         ["narrator.py", "Optional LLM prose over that attribution, with a "
                         "template fallback on every failure mode."],
+        ["investigator.py", "An agent that answers questions about a run using "
+                            "four read-only tools over the ledger and the "
+                            "observation stream. The one place a model is "
+                            "given latitude, and it can change nothing."],
         ["policy.py", "Ten bounds and stopping rules. Returns a verdict "
                       "carrying the specific rule that decided it."],
         ["routing.py", "Weight table per (method, issuer), canary floor, "
@@ -647,7 +684,7 @@ def complete_doc(f: Facts) -> List:
 
     A(P("13. Testing", "h1"))
     A(P(
-        "163 property tests, all passing, and pyflakes clean. They are not "
+        "180 property tests, all passing, and pyflakes clean. They are not "
         "coverage theatre &mdash; each corresponds to a claim made in this "
         "document that would otherwise be taken on trust:"))
     A(bullets([
@@ -770,7 +807,7 @@ def complete_doc(f: Facts) -> List:
         "python -m revenueguard.narrate    --claude             # LLM note vs template\n"
         "python -m revenueguard.execute    --limit 6            # Razorpay test mode, dry run\n"
         "streamlit run app.py                                   # operator console\n\n"
-        "pytest -q                                              # 163 property tests"))
+        "pytest -q                                              # 180 property tests"))
     A(P(
         "Everything is deterministic under <font face='Courier' size='8.5'>"
         "--seed</font>. No number in this document was typed by hand; each is "
@@ -973,6 +1010,17 @@ def summary_doc(f: Facts) -> List:
                measurement_diagram()))
 
     A(together(P("Where AI is used", "h1"), layers_diagram()))
+    A(Spacer(1, 8))
+    A(P(
+        "There is one place a model is given real latitude, and it is on the "
+        "explaining side of that line. <font face='Courier' size='8.5'>"
+        "investigator.py</font> is an agent that answers "
+        "<i>why did traffic move off this gateway, and did it help?</i> from "
+        "four read-only tools over the audit ledger and the observation stream "
+        "&mdash; deciding for itself what to query and following up until it "
+        "can answer. Every tool reads and none write, no decision-path module "
+        "imports it, and it cannot see the incident plan either. Tests enforce "
+        "all three."))
 
     A(P("Results", "h1"))
     A(kpis([
