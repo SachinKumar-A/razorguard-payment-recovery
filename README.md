@@ -142,7 +142,7 @@ same alarms; it simply may not act. Tests assert it takes zero routing actions.
 ## Run it
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt        # or requirements-dev.txt to run the tests
 
 python -m revenueguard.validate   --seeds 8 --days 2   # the headline, with a CI
 python -m revenueguard.experiment --days 2             # one seed, in detail
@@ -320,6 +320,7 @@ revenueguard/
   stress.py         does shifting harder recover more?
   demo.py narrate.py execute.py
 docs/               the two project PDFs, generated from bench/results
+SUBMIT.md           submission checklist, video script, panel prep
 tests/              67 property tests
 ```
 
