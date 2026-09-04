@@ -29,6 +29,7 @@ streamlit run app.py                         # expect: console loads
       it refuses to report a figure — that is the guard working, but fix it
       before submitting)
 - [ ] console loads at `localhost:8501`
+- [ ] `docker compose up --build` brings up service (`:8000/health`) and console
 - [ ] `bench/results/*.json` are committed, so a reviewer sees every number
       without running anything
 - [ ] repo is **public**
@@ -141,7 +142,21 @@ python -m revenueguard.stress --days 2
 
 This is the strongest 50 seconds in the video. Do not cut it.
 
-**4:20–5:00 — where AI sits, and close**
+**4:20–4:40 — it is not only a benchmark**
+
+```bash
+docker compose up
+curl -X POST localhost:8000/ingest -d '{"outcomes":[...]}'
+curl localhost:8000/routing
+```
+
+> "The same loop runs as a service. Real payment outcomes go in as aggregated
+> counts, recommendations come out. The deployed path is the benchmarked path —
+> the service calls the same `tick`, and a test asserts they produce identical
+> results. It emits recommendations rather than applying them, because acquirer
+> selection isn't an endpoint a third party can call."
+
+**4:40–5:00 — where AI sits, and close**
 
 > "Attribution is deterministic — lift with coverage. The language model is
 > handed the finished attribution and writes it in English for the console. It
@@ -149,7 +164,7 @@ This is the strongest 50 seconds in the video. Do not cut it.
 > sampled token in the path of a money-moving action can't be reproduced or
 > defended.
 >
-> 67 property tests. Every number in the README is printed by a command in the
+> 81 property tests. Every number in the README is printed by a command in the
 > repo — none of it is typed by hand."
 
 **Do not** show: the Streamlit console (it's slower than the CLI and says less),
@@ -198,6 +213,14 @@ had no test credentials.
 Fit the congestion curve to real acquirer telemetry. Its knee and slope are a
 plausible shape, not an observed one, and that curve is what sets the 80% shift
 cap — so it's the most load-bearing unknown left.
+
+**"Could this actually run somewhere?"**
+It runs as a container today and consumes real outcomes over HTTP; `DEPLOY.md`
+has the integration. Before production it needs persistence — state is in
+memory, so a restart is a three-hour blind spot while baselines refill —
+authentication on `/ingest`, and the capacity curve fitted to real acquirers
+rather than the plausible shape it uses now. None are hard; none are done, and
+they are listed rather than glossed.
 
 **"What's the weakest part?"**
 That same curve, and that the confidence interval covers traffic randomness but
