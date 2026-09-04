@@ -189,15 +189,25 @@ python -m revenueguard.stress     --days 2             # are the caps costing mo
 python -m revenueguard.demo                            # replay an incident
 python -m revenueguard.bench      --days 2             # detector head-to-head
 python -m revenueguard.sweep      --budget 1.0         # matched false-alarm curve
+python -m revenueguard.sensitivity --days 2            # does the cap depend on a guess?
 python -m revenueguard.narrate    --claude             # LLM note vs template
 python -m revenueguard.execute    --limit 6            # Razorpay test mode, dry run
 streamlit run app.py                                   # operator console
 
 docker compose up --build                              # service + console
-pytest -q                                              # 147 property tests
+pytest -q                                              # 163 property tests
 ```
 
-Deterministic under `--seed`. **No number in this README was typed by hand.**
+Deterministic under `--seed`. Every figure below is copied from those commands'
+output, and **`tests/test_documented_claims.py` fails if any of them stops
+matching `bench/results/*.json`** — so a stale number in this README is a broken
+test, not something a reader has to catch. The PDFs go further and interpolate
+their figures directly.
+
+**What is invented and what is measured:** the world is simulated and the
+measurement is real. [`DATA.md`](DATA.md) lists every invented constant —
+ticket sizes, traffic mix, success rates, the congestion curve — and says which
+results depend on which.
 
 ---
 
@@ -368,11 +378,13 @@ revenueguard/
   demo.py narrate.py execute.py
 docs/               the two project PDFs, generated from bench/results
 DEPLOY.md           running it against real traffic, and what is still missing
+DATA.md             every invented constant, and which results depend on it
 SUBMIT.md           submission checklist, video script, panel prep
-tests/              147 property tests
+tests/              163 property tests
 ```
 
-`pyflakes` clean.
+`pyflakes` clean. No result value is hardcoded anywhere in `revenueguard/` —
+a test asserts it.
 
 ---
 

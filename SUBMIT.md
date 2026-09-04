@@ -17,13 +17,13 @@ because that is what a reviewer will have.
 git clone <your-repo-url> && cd razorpay
 pip install -r requirements-dev.txt
 
-pytest -q                                    # expect: 147 passed
+pytest -q                                    # expect: 163 passed
 python -m revenueguard.validate --seeds 8 --days 2
 python -m revenueguard.experiment --days 2
 streamlit run app.py                         # expect: console loads
 ```
 
-- [ ] 147 tests pass
+- [ ] 163 tests pass
 - [ ] `validate` reports a CI that excludes zero and 0/8 losing seeds
 - [ ] `experiment` prints **identical attempts in both arms** (if it does not,
       it refuses to report a figure — that is the guard working, but fix it
@@ -61,13 +61,16 @@ streamlit run app.py                         # expect: console loads
 > observable, and rolls back when the destination proves worse.
 >
 > The recovery figure is measured, not projected: the same demand runs twice,
-> once with routing off and once on, across eight paired seeds. ₹1.24 crore
-> recovered per two simulated days, 95% CI ₹1.19–1.29 crore, 38.4% of the money
-> the injected incidents put at risk, zero of eight seeds losing money.
+> once with routing off and once on, across eight paired seeds. **₹1,22,91,379**
+> recovered per two simulated days, 95% CI ₹1,17,94,730 – ₹1,27,88,027, 38.2% of
+> the money the injected incidents put at risk, zero of eight seeds losing money.
 >
-> Two design decisions were overturned by their own measurements, and both are
-> documented: the anti-oscillation budget was counting the wrong thing, and the
-> shift cap was costing 61% of the available recovery.
+> Three design decisions were overturned by their own measurements and all three
+> are documented: the anti-oscillation budget was counting the wrong thing, the
+> shift cap was costing 61% of the available recovery, and a sensitivity sweep
+> found gateway fleets where rerouting loses money at every setting — which is
+> why the system now measures the realised effect of its own actions and halts
+> when they stop paying.
 
 **Repo:** `<your-repo-url>` · **Video:** `<your-video-url>`
 **Architecture:** `docs/RevenueGuard-Complete-Documentation.pdf` (sections 8–9),
@@ -124,8 +127,8 @@ python -m revenueguard.validate --seeds 8 --days 2
 ```
 
 > "One seed can't tell a real effect from a lucky roll. Eight paired seeds:
-> ₹1.24 crore, confidence interval ₹1.19 to ₹1.29 crore, zero seeds losing
-> money."
+> ₹1,22,91,379, confidence interval ₹1,17,94,730 to ₹1,27,88,027, zero seeds
+> losing money."
 
 **3:30–4:20 — the finding that changed the code**
 
@@ -140,7 +143,26 @@ python -m revenueguard.stress --days 2
 > default moved to 80%, the knee of that curve. The paragraph was wrong and the
 > measurement is in the repo."
 
-This is the strongest 50 seconds in the video. Do not cut it.
+Then the one that matters more:
+
+```bash
+python -m revenueguard.sensitivity --days 2
+```
+
+> "Then I asked whether that 80% depends on a curve I guessed. It mostly
+> doesn't — but the sweep found something worse. On gateway fleets already
+> running at capacity, this system loses money at *every* setting. There's no
+> spare room to route into, so shifting traffic just piles load onto something
+> already struggling. No per-action guardrail can see that; every individual
+> move looks fine.
+>
+> My first version of that report divided one negative number by another and
+> printed 'ACCEPTABLE'. I caught it, fixed it, and built what it was hiding:
+> the system now measures the real effect of its own moves and halts when
+> they stop paying."
+
+**This is the strongest 90 seconds in the video. Do not cut it.** Almost every
+other submission will claim their system always helps.
 
 **4:20–4:40 — it is not only a benchmark**
 
@@ -164,7 +186,7 @@ curl localhost:8000/routing
 > sampled token in the path of a money-moving action can't be reproduced or
 > defended.
 >
-> 147 property tests. Every number in the README is printed by a command in the
+> 163 property tests. Every number in the README is printed by a command in the
 > repo — none of it is typed by hand."
 
 **Do not** show: the Streamlit console (it's slower than the CLI and says less),
