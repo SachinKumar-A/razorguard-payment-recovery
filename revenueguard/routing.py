@@ -12,9 +12,9 @@ gateway would be a lie.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, Tuple
 
-from .config import GATEWAY_SHARE, GATEWAYS
+from .config import GATEWAY_SHARE
 
 #: Never drain a gateway completely. A gateway carrying zero traffic emits zero
 #: observations, so we would lose the ability to tell whether it recovered --
@@ -53,9 +53,6 @@ class RoutingTable:
         cur = self.current[(method, issuer)]
         base = self.baseline[(method, issuer)]
         return any(abs(cur[g] - base[g]) > 1e-9 for g in cur)
-
-    def diverted_keys(self) -> List[Tuple[str, str]]:
-        return [k for k in self.current if self.is_diverted(*k)]
 
     def shift_away(self, method: str, issuer: str, source: str,
                    target: str, fraction: float) -> Dict[str, float]:
@@ -96,7 +93,3 @@ class RoutingTable:
         cur = self.current[(method, issuer)]
         base = self.baseline[(method, issuer)]
         return all(abs(cur[g] - base[g]) <= tol for g in cur)
-
-    def snapshot(self) -> Dict[str, Dict[str, float]]:
-        return {f"{m}|{i}": dict(w) for (m, i), w in self.current.items()
-                if self.is_diverted(m, i)}

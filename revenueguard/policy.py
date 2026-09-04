@@ -28,10 +28,6 @@ class PolicyVerdict:
     rule: Optional[str] = None
     detail: Dict[str, float] = field(default_factory=dict)
 
-    @property
-    def allowed(self) -> bool:
-        return self.decision is Decision.ALLOW
-
 
 @dataclass
 class PolicyConfig:
@@ -47,9 +43,19 @@ class PolicyConfig:
     min_drop_pp: float = 4.0
     #: Minutes before the same key may be acted on again.
     action_cooldown_min: int = 15
-    #: Global rate limit. A system that reroutes forty times an hour is not
-    #: responding to incidents, it is oscillating.
-    max_actions_per_hour: int = 12
+    #: Distinct root causes that may be responded to in an hour.
+    #:
+    #: This is the anti-oscillation budget, and it counts *causes*, not weight
+    #: changes. One gateway outage legitimately requires shifting every
+    #: (method, issuer) key that gateway served - two dozen of them - and
+    #: charging that fan-out against an oscillation budget conflates "the system
+    #: is thrashing" with "one incident was wide". The earlier design counted
+    #: actions and spent its entire hourly budget on the first outage, then
+    #: escalated everything that followed.
+    max_causes_per_hour: int = 4
+    #: Hard ceiling on individual weight changes per hour, regardless of cause.
+    #: The absolute bound that survives a mis-attributed cause.
+    max_actions_per_hour: int = 60
     #: A target gateway must be at least this much healthier than the source.
     min_target_advantage_pp: float = 8.0
     #: A target carrying its own alarm is never a valid destination.
@@ -63,10 +69,16 @@ class PolicyEngine:
         self.config = config or PolicyConfig()
         self._last_action: Dict[Tuple[str, str], int] = {}
         self._action_times: List[int] = []
+        self._cause_times: Dict[str, int] = {}
 
     def _recent_action_count(self, minute: int) -> int:
         self._action_times = [t for t in self._action_times if minute - t < 60]
         return len(self._action_times)
+
+    def _recent_causes(self, minute: int) -> Dict[str, int]:
+        self._cause_times = {c: t for c, t in self._cause_times.items()
+                             if minute - t < 60}
+        return self._cause_times
 
     def evaluate_shift(
         self,
@@ -84,6 +96,7 @@ class PolicyEngine:
         current_divergence: float,
         evidence_penalty_pp: float = 0.0,
         all_candidates_alarmed: bool = False,
+        cause_key: str = "",
     ) -> PolicyVerdict:
         c = self.config
 
@@ -104,11 +117,26 @@ class PolicyEngine:
                                  "action_cooldown", {"since_min": float(minute - last)})
 
         if self._recent_action_count(minute) >= c.max_actions_per_hour:
-            # A stopping rule, not a delay: something systemic is happening and
-            # a human should look before the system keeps reacting.
+            # The absolute ceiling. Reaching it means the cause budget was
+            # cleared by something far wider than expected, and a human should
+            # look before the system keeps reacting.
             return PolicyVerdict(Decision.ESCALATE,
-                                 f"{c.max_actions_per_hour} actions in the last hour",
+                                 f"{c.max_actions_per_hour} weight changes in the "
+                                 f"last hour, the hard ceiling",
                                  "max_actions_per_hour")
+
+        recent_causes = self._recent_causes(minute)
+        if (cause_key and cause_key not in recent_causes
+                and len(recent_causes) >= c.max_causes_per_hour):
+            # A fifth distinct cause inside an hour is not four incidents plus
+            # one - it is a signal that attribution is fragmenting or the fleet
+            # is failing broadly. Either way, stop and escalate.
+            return PolicyVerdict(
+                Decision.ESCALATE,
+                f"already responding to {len(recent_causes)} distinct causes this "
+                f"hour ({', '.join(sorted(recent_causes))}); '{cause_key}' would "
+                f"be a new one",
+                "max_causes_per_hour")
 
         if target is None:
             return PolicyVerdict(Decision.ESCALATE,
@@ -169,6 +197,9 @@ class PolicyEngine:
                              f"running {advantage_pp:.1f}pp better",
                              detail={"advantage_pp": advantage_pp})
 
-    def record_action(self, minute: int, method: str, issuer: str) -> None:
+    def record_action(self, minute: int, method: str, issuer: str,
+                      cause_key: str = "") -> None:
         self._last_action[(method, issuer)] = minute
         self._action_times.append(minute)
+        if cause_key:
+            self._cause_times[cause_key] = minute

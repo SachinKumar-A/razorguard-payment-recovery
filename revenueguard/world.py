@@ -22,7 +22,7 @@ would be partly luck. Here demand is bit-identical between runs by construction.
 """
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 

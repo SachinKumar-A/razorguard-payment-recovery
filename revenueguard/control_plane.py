@@ -113,17 +113,6 @@ class HealthTracker:
             return HealthEstimate(None, 0, "none", 20)
         return HealthEstimate(suc / att, att, "gateway", 20)
 
-    def recent(self, slice_key: str, minutes: int = RECENT_MIN) -> Tuple[int, int]:
-        h = self._hist.get(slice_key)
-        if not h:
-            return 0, 0
-        rows = list(h)[-minutes:]
-        return sum(a for _, a, _ in rows), sum(s for _, _, s in rows)
-
-    def recent_sr(self, slice_key: str, minutes: int = RECENT_MIN) -> Optional[float]:
-        att, suc = self.recent(slice_key, minutes)
-        return (suc / att) if att else None
-
     def baseline_sr(self, slice_key: str) -> Optional[float]:
         h = self._hist.get(slice_key)
         if not h or len(h) < BASELINE_LAG_MIN + RECENT_MIN:
@@ -320,6 +309,7 @@ class ControlPlane:
                 current_divergence=self._divergence(method, issuer),
                 evidence_penalty_pp=(est.penalty_pp if est is not None else 0.0),
                 all_candidates_alarmed=all_alarmed,
+                cause_key=cause.label,
             )
 
             out.ledger.record(
@@ -347,7 +337,7 @@ class ControlPlane:
                                   rule="canary_floor", decision="block")
                 continue
 
-            self.policy.record_action(minute, method, issuer)
+            self.policy.record_action(minute, method, issuer, cause.label)
             out.actions += 1
             self.diversions[(method, issuer)] = Diversion(
                 method=method, issuer=issuer, source=source, target=target,

@@ -8,13 +8,13 @@ worth -- including the decisions it refused to make.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import altair as alt
 import pandas as pd
 import streamlit as st
 
-from revenueguard.config import METHOD_TICKET, WorldConfig
+from revenueguard.config import WorldConfig
 from revenueguard.control_plane import ControlPlane
 from revenueguard.detectors import PosteriorDropDetector
 from revenueguard.experiment import exposure_inr

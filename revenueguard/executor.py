@@ -26,7 +26,7 @@ environment variables *and* an explicit `--live` flag; test-mode keys
 from __future__ import annotations
 
 import os
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from .audit import AuditEvent
@@ -114,12 +114,11 @@ class RazorpayTestExecutor:
                  key_secret: Optional[str] = None,
                  create_payment_link: bool = False):
         try:
-            import razorpay  # noqa: F401
+            import razorpay
         except ImportError as exc:  # pragma: no cover - depends on environment
             raise RuntimeError(
                 "the razorpay SDK is not installed; `pip install razorpay` or "
                 "run without --live to use the dry-run executor") from exc
-        import razorpay
 
         self.key_id = key_id or os.environ.get("RAZORPAY_KEY_ID", "")
         secret = key_secret or os.environ.get("RAZORPAY_KEY_SECRET", "")

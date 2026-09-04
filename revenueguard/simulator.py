@@ -9,7 +9,7 @@ from typing import Iterator, List
 
 import numpy as np
 
-from .config import SliceProfile, WorldConfig
+from .config import WorldConfig
 from .scenarios import Incident
 
 

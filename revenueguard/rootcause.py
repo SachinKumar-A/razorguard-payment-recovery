@@ -17,7 +17,7 @@ covering 35% of alarms while being 33% of the fleet is a coincidence.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence
 
 DIMENSIONS = ("gateway", "method", "issuer")
 

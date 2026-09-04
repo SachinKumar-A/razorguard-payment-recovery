@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -53,12 +53,6 @@ class AuditLedger:
     def for_subject(self, subject: str) -> List[AuditEvent]:
         return [e for e in self._events if e.subject == subject]
 
-    def counts(self) -> Dict[str, int]:
-        out: Dict[str, int] = {}
-        for e in self._events:
-            out[e.kind] = out.get(e.kind, 0) + 1
-        return out
-
     def blocked_by_rule(self) -> Dict[str, int]:
         out: Dict[str, int] = {}
         for e in self._events:
@@ -72,9 +66,6 @@ class AuditLedger:
         with open(path, "w", encoding="utf-8") as fh:
             for e in self._events:
                 fh.write(e.line() + "\n")
-
-    def tail(self, n: int = 20) -> List[AuditEvent]:
-        return self._events[-n:]
 
     def trace(self, minute_from: int, minute_to: int) -> List[AuditEvent]:
         return [e for e in self._events if minute_from <= e.minute <= minute_to]

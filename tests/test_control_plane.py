@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 
-from revenueguard.config import GATEWAYS, ISSUERS, METHODS, WorldConfig
+from revenueguard.config import ISSUERS, METHODS, WorldConfig
 from revenueguard.control_plane import ControlPlane
 from revenueguard.detectors import PosteriorDropDetector
 from revenueguard.policy import Decision, PolicyConfig, PolicyEngine

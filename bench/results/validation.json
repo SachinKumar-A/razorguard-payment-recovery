@@ -1,0 +1,190 @@
+{
+  "config": {
+    "seeds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "days": 2
+  },
+  "trials": [
+    {
+      "seed": 1,
+      "valid": true,
+      "attempts": 1966345,
+      "control_successes": 1829025,
+      "treatment_successes": 1836363,
+      "payments_saved": 7338,
+      "recovered_inr": 7988780.0,
+      "exposure_inr": 32359047.37000006,
+      "share_of_exposure": 0.2468793320351688,
+      "sr_gain_pp": 0.37317968108342425,
+      "actions": 127,
+      "rollbacks": 28,
+      "escalated": 73
+    },
+    {
+      "seed": 2,
+      "valid": true,
+      "attempts": 1970058,
+      "control_successes": 1832103,
+      "treatment_successes": 1839743,
+      "payments_saved": 7640,
+      "recovered_inr": 8881830.0,
+      "exposure_inr": 32640535.940000035,
+      "share_of_exposure": 0.27211042172612043,
+      "sr_gain_pp": 0.3878058412493335,
+      "actions": 135,
+      "rollbacks": 30,
+      "escalated": 74
+    },
+    {
+      "seed": 3,
+      "valid": true,
+      "attempts": 1966096,
+      "control_successes": 1829333,
+      "treatment_successes": 1837681,
+      "payments_saved": 8348,
+      "recovered_inr": 9102180.0,
+      "exposure_inr": 32275799.680000048,
+      "share_of_exposure": 0.28201253230730133,
+      "sr_gain_pp": 0.424597781593572,
+      "actions": 128,
+      "rollbacks": 35,
+      "escalated": 73
+    },
+    {
+      "seed": 4,
+      "valid": true,
+      "attempts": 1968706,
+      "control_successes": 1832725,
+      "treatment_successes": 1839972,
+      "payments_saved": 7247,
+      "recovered_inr": 8038370.0,
+      "exposure_inr": 31669403.70999997,
+      "share_of_exposure": 0.253821324632702,
+      "sr_gain_pp": 0.368109814263784,
+      "actions": 113,
+      "rollbacks": 26,
+      "escalated": 72
+    },
+    {
+      "seed": 5,
+      "valid": true,
+      "attempts": 1965357,
+      "control_successes": 1829186,
+      "treatment_successes": 1836923,
+      "payments_saved": 7737,
+      "recovered_inr": 8380660.0,
+      "exposure_inr": 32132383.149999965,
+      "share_of_exposure": 0.2608166335150902,
+      "sr_gain_pp": 0.3936689364832935,
+      "actions": 131,
+      "rollbacks": 30,
+      "escalated": 64
+    },
+    {
+      "seed": 6,
+      "valid": true,
+      "attempts": 1968120,
+      "control_successes": 1831060,
+      "treatment_successes": 1839004,
+      "payments_saved": 7944,
+      "recovered_inr": 8806090.0,
+      "exposure_inr": 31851518.70000006,
+      "share_of_exposure": 0.27647315919036486,
+      "sr_gain_pp": 0.4036339247606824,
+      "actions": 125,
+      "rollbacks": 27,
+      "escalated": 62
+    },
+    {
+      "seed": 7,
+      "valid": true,
+      "attempts": 1966458,
+      "control_successes": 1829528,
+      "treatment_successes": 1837575,
+      "payments_saved": 8047,
+      "recovered_inr": 8732980.0,
+      "exposure_inr": 32298254.580000013,
+      "share_of_exposure": 0.2703855088629993,
+      "sr_gain_pp": 0.4092129097087227,
+      "actions": 126,
+      "rollbacks": 29,
+      "escalated": 67
+    },
+    {
+      "seed": 8,
+      "valid": true,
+      "attempts": 1968797,
+      "control_successes": 1831936,
+      "treatment_successes": 1839628,
+      "payments_saved": 7692,
+      "recovered_inr": 8572270.0,
+      "exposure_inr": 31965925.300000142,
+      "share_of_exposure": 0.2681689930621205,
+      "sr_gain_pp": 0.3906954348264491,
+      "actions": 133,
+      "rollbacks": 30,
+      "escalated": 62
+    }
+  ],
+  "summary": {
+    "recovered_inr": {
+      "n": 8,
+      "mean": 8562895.0,
+      "sd": 399759.31247975415,
+      "se": 141336.2603484531,
+      "ci_lo": 8228634.744275908,
+      "ci_hi": 8897155.255724091,
+      "min": 7988780.0,
+      "max": 9102180.0
+    },
+    "share_of_exposure": {
+      "n": 8,
+      "mean": 0.26633348816648345,
+      "sd": 0.011755001229044555,
+      "se": 0.004156020540956803,
+      "ci_lo": 0.2565044995871206,
+      "ci_hi": 0.27616247674584626,
+      "min": 0.2468793320351688,
+      "max": 0.28201253230730133
+    },
+    "sr_gain_pp": {
+      "n": 8,
+      "mean": 0.39386304049615767,
+      "sd": 0.018568421954694683,
+      "se": 0.006564928540048889,
+      "ci_lo": 0.37833698449894204,
+      "ci_hi": 0.4093890964933733,
+      "min": 0.368109814263784,
+      "max": 0.424597781593572
+    },
+    "actions": {
+      "n": 8,
+      "mean": 127.25,
+      "sd": 6.734771180756096,
+      "se": 2.3811011858261835,
+      "ci_lo": 121.61869569552107,
+      "ci_hi": 132.88130430447893,
+      "min": 113,
+      "max": 135
+    },
+    "rollbacks": {
+      "n": 8,
+      "mean": 29.375,
+      "sd": 2.7222627143085005,
+      "se": 0.9624652127294189,
+      "ci_lo": 27.098769771894926,
+      "ci_hi": 31.651230228105074,
+      "min": 26,
+      "max": 35
+    }
+  },
+  "seeds_with_loss": 0
+}

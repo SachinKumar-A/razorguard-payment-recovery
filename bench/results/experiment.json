@@ -13,33 +13,34 @@
     }
   },
   "treatment": {
-    "successes": 1836933,
-    "success_rate": 0.934133,
-    "revenue_inr": 2411779200,
+    "successes": 1837575,
+    "success_rate": 0.934459,
+    "revenue_inr": 2413066710,
     "revenue_by_method": {
-      "upi": 744032000,
-      "card": 1075266600,
-      "netbanking": 592480600
+      "upi": 744146560,
+      "card": 1075956750,
+      "netbanking": 592963400
     },
-    "actions": 100,
+    "actions": 126,
     "blocked": 9,
-    "escalated": 96,
-    "rollbacks": 25,
-    "restores": 431,
-    "audit_events": 1078,
+    "escalated": 67,
+    "rollbacks": 29,
+    "restores": 488,
+    "audit_events": 1153,
     "blocked_by_rule": {
+      "max_causes_per_hour": 26,
+      "target_alarmed": 3,
       "min_target_advantage": 8,
-      "no_healthy_destination": 12,
-      "max_actions_per_hour": 59,
+      "no_healthy_destination": 9,
       "action_cooldown": 1
     }
   },
   "recovered": {
-    "payments": 7405,
-    "revenue_inr": 7445470,
-    "success_rate_gain_pp": 0.3766,
+    "payments": 8047,
+    "revenue_inr": 8732980,
+    "success_rate_gain_pp": 0.4092,
     "control_exposure_inr": 32298255,
-    "treatment_exposure_inr": 24889428,
-    "share_of_exposure_recovered": 0.2305
+    "treatment_exposure_inr": 23695472,
+    "share_of_exposure_recovered": 0.2704
   }
 }
