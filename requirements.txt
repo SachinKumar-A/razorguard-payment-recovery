@@ -1,11 +1,13 @@
+# Core: the simulator, detectors, control plane and every benchmark.
 numpy>=1.24
 scipy>=1.10
 
-# operator console (streamlit run app.py)
+# Operator console (streamlit run app.py)
 streamlit>=1.30
 pandas>=2.0
 altair>=5.0
 
-# optional integrations - the repo runs fully without either
-# razorpay>=1.4        # python -m revenueguard.execute --live
-# anthropic>=1.0        # python -m revenueguard.narrate --claude
+# Optional integrations. The repository runs fully without either; each is
+# needed only for the one command named beside it.
+#   pip install razorpay     ->  python -m revenueguard.execute --live
+#   pip install anthropic    ->  python -m revenueguard.narrate --claude

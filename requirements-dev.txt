@@ -1,0 +1,10 @@
+-r requirements.txt
+
+# Tests
+pytest>=7.0
+
+# Rebuilding the PDFs in docs/ (python docs/content.py)
+reportlab>=4.0
+
+# Lint
+pyflakes>=3.0
