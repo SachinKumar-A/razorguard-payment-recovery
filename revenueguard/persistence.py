@@ -33,6 +33,8 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import time
+import uuid
 from typing import Dict, List, Optional, Tuple
 
 from .audit import AuditEvent
@@ -86,6 +88,14 @@ CREATE TABLE IF NOT EXISTS diversions (
 CREATE TABLE IF NOT EXISTS meta (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
+);
+
+-- Exactly one row, id = 1. See Lease.
+CREATE TABLE IF NOT EXISTS lease (
+    id         INTEGER PRIMARY KEY CHECK (id = 1),
+    holder     TEXT    NOT NULL,
+    expires_at REAL    NOT NULL,
+    fenced     INTEGER NOT NULL DEFAULT 0
 );
 """
 
@@ -229,6 +239,112 @@ class Store:
 
     def commit(self) -> None:
         self.db.commit()
+
+
+class Lease:
+    """One active instance at a time, with automatic failover.
+
+    The control plane holds all its state in one process and its decisions have
+    to be globally consistent: two instances each seeing half the ingest stream
+    would each conclude the fleet was half its real size, and both would act on
+    it. So replicas are for *failover*, not for sharing load - exactly one is
+    ever active, and the others wait.
+
+    A lease in the shared database decides which. The holder renews it every
+    tick; if the holder dies, the lease expires and a standby takes over,
+    warming from the same stored history the dead one was writing.
+
+    `fenced` is the guard against the classic failure: a process that stalls
+    long enough to lose its lease, then wakes up and carries on acting as
+    though it still holds it. Every renewal checks the holder is still us, and
+    a renewal that finds otherwise returns False - the caller must stop acting
+    immediately rather than finish the tick it was in the middle of.
+
+    Note the honest limit: with SQLite this works for replicas sharing one
+    volume. Across machines the database has to move to something with real
+    multi-writer semantics, and that is a genuine piece of work rather than a
+    configuration change.
+    """
+
+    def __init__(self, store: "Store", ttl_seconds: float = 90.0,
+                 holder: Optional[str] = None):
+        self.store = store
+        self.ttl = ttl_seconds
+        self.holder = holder or f"{os.uname().nodename if hasattr(os, 'uname') else os.environ.get('HOSTNAME', 'local')}-{uuid.uuid4().hex[:8]}"
+        self.is_active = False
+
+    def _row(self):
+        return self.store.db.execute(
+            "SELECT holder, expires_at FROM lease WHERE id = 1").fetchone()
+
+    def try_acquire(self, now: Optional[float] = None) -> bool:
+        """Take the lease if it is free, expired, or already ours."""
+        current = time.time() if now is None else now
+        db = self.store.db
+        try:
+            db.execute("BEGIN IMMEDIATE")
+            row = self._row()
+            if row is not None and row["holder"] != self.holder \
+                    and row["expires_at"] > current:
+                db.execute("ROLLBACK")
+                self.is_active = False
+                return False
+            db.execute(
+                "INSERT INTO lease(id, holder, expires_at) VALUES(1, ?, ?) "
+                "ON CONFLICT(id) DO UPDATE SET holder = excluded.holder, "
+                "expires_at = excluded.expires_at",
+                (self.holder, current + self.ttl))
+            db.execute("COMMIT")
+        except sqlite3.OperationalError:
+            # Another replica is mid-transaction. Losing a race is normal; the
+            # next attempt will settle it.
+            self.is_active = False
+            return False
+        self.is_active = True
+        return True
+
+    def renew(self, now: Optional[float] = None) -> bool:
+        """Extend our lease. False means we lost it and must stop acting."""
+        current = time.time() if now is None else now
+        db = self.store.db
+        try:
+            db.execute("BEGIN IMMEDIATE")
+            row = self._row()
+            if row is None or row["holder"] != self.holder:
+                db.execute("ROLLBACK")
+                self.is_active = False
+                return False
+            db.execute("UPDATE lease SET expires_at = ? WHERE id = 1",
+                       (current + self.ttl,))
+            db.execute("COMMIT")
+        except sqlite3.OperationalError:
+            self.is_active = False
+            return False
+        self.is_active = True
+        return True
+
+    def release(self) -> None:
+        """Give the lease up on a clean shutdown, so failover is immediate."""
+        try:
+            self.store.db.execute(
+                "UPDATE lease SET expires_at = 0 WHERE id = 1 AND holder = ?",
+                (self.holder,))
+            self.store.db.commit()
+        except sqlite3.Error:
+            pass
+        self.is_active = False
+
+    def status(self) -> Dict[str, object]:
+        row = self._row()
+        if row is None:
+            return {"holder": None, "active": False, "self": self.holder}
+        return {
+            "holder": row["holder"],
+            "active": row["holder"] == self.holder
+                      and row["expires_at"] > time.time(),
+            "self": self.holder,
+            "expires_in_s": round(row["expires_at"] - time.time(), 1),
+        }
 
 
 def checkpoint(store: Store, plane, outcome, minute: int) -> None:

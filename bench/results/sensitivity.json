@@ -1,0 +1,285 @@
+{
+  "config": {
+    "days": 2,
+    "seed": 7,
+    "shipped_cap": 0.8
+  },
+  "curves": [
+    {
+      "label": "forgiving",
+      "knee": 0.85,
+      "slope": 0.15,
+      "headroom": 2.0
+    },
+    {
+      "label": "shipped",
+      "knee": 0.7,
+      "slope": 0.35,
+      "headroom": 1.6
+    },
+    {
+      "label": "brittle",
+      "knee": 0.55,
+      "slope": 0.6,
+      "headroom": 1.3
+    },
+    {
+      "label": "severe",
+      "knee": 0.45,
+      "slope": 0.9,
+      "headroom": 1.15
+    }
+  ],
+  "cells": [
+    {
+      "curve": "forgiving",
+      "cap": 0.2,
+      "valid": true,
+      "knee": 0.85,
+      "slope": 0.15,
+      "headroom": 2.0,
+      "recovered_inr": 2136880.0,
+      "share_of_exposure": 0.06616085072668962,
+      "rollbacks": 13,
+      "congestion_cost_txn": 0.0
+    },
+    {
+      "curve": "forgiving",
+      "cap": 0.4,
+      "valid": true,
+      "knee": 0.85,
+      "slope": 0.15,
+      "headroom": 2.0,
+      "recovered_inr": 7153580.0,
+      "share_of_exposure": 0.2214850335729813,
+      "rollbacks": 26,
+      "congestion_cost_txn": 0.0
+    },
+    {
+      "curve": "forgiving",
+      "cap": 0.6,
+      "valid": true,
+      "knee": 0.85,
+      "slope": 0.15,
+      "headroom": 2.0,
+      "recovered_inr": 10457130.0,
+      "share_of_exposure": 0.3237676504808823,
+      "rollbacks": 25,
+      "congestion_cost_txn": 0.0
+    },
+    {
+      "curve": "forgiving",
+      "cap": 0.8,
+      "valid": true,
+      "knee": 0.85,
+      "slope": 0.15,
+      "headroom": 2.0,
+      "recovered_inr": 13525640.0,
+      "share_of_exposure": 0.41877309396079426,
+      "rollbacks": 39,
+      "congestion_cost_txn": 0.0
+    },
+    {
+      "curve": "forgiving",
+      "cap": 1.0,
+      "valid": true,
+      "knee": 0.85,
+      "slope": 0.15,
+      "headroom": 2.0,
+      "recovered_inr": 14072050.0,
+      "share_of_exposure": 0.435690726418195,
+      "rollbacks": 35,
+      "congestion_cost_txn": 0.0
+    },
+    {
+      "curve": "shipped",
+      "cap": 0.2,
+      "valid": true,
+      "knee": 0.7,
+      "slope": 0.35,
+      "headroom": 1.6,
+      "recovered_inr": 2131970.0,
+      "share_of_exposure": 0.0660088301279344,
+      "rollbacks": 13,
+      "congestion_cost_txn": 4.789635434243029
+    },
+    {
+      "curve": "shipped",
+      "cap": 0.4,
+      "valid": true,
+      "knee": 0.7,
+      "slope": 0.35,
+      "headroom": 1.6,
+      "recovered_inr": 7096530.0,
+      "share_of_exposure": 0.2197186842534324,
+      "rollbacks": 26,
+      "congestion_cost_txn": 41.8135347570967
+    },
+    {
+      "curve": "shipped",
+      "cap": 0.6,
+      "valid": true,
+      "knee": 0.7,
+      "slope": 0.35,
+      "headroom": 1.6,
+      "recovered_inr": 9882790.0,
+      "share_of_exposure": 0.30598526541182514,
+      "rollbacks": 25,
+      "congestion_cost_txn": 268.0937804242052
+    },
+    {
+      "curve": "shipped",
+      "cap": 0.8,
+      "valid": true,
+      "knee": 0.7,
+      "slope": 0.35,
+      "headroom": 1.6,
+      "recovered_inr": 12040620.0,
+      "share_of_exposure": 0.37279475800082057,
+      "rollbacks": 32,
+      "congestion_cost_txn": 691.3589804682113
+    },
+    {
+      "curve": "shipped",
+      "cap": 1.0,
+      "valid": true,
+      "knee": 0.7,
+      "slope": 0.35,
+      "headroom": 1.6,
+      "recovered_inr": 12442360.0,
+      "share_of_exposure": 0.3852332010443889,
+      "rollbacks": 33,
+      "congestion_cost_txn": 1152.583877303732
+    },
+    {
+      "curve": "brittle",
+      "cap": 0.2,
+      "valid": true,
+      "knee": 0.55,
+      "slope": 0.6,
+      "headroom": 1.3,
+      "recovered_inr": 63890.0,
+      "share_of_exposure": 0.0017919454969082674,
+      "rollbacks": 37,
+      "congestion_cost_txn": 851.2926480633832
+    },
+    {
+      "curve": "brittle",
+      "cap": 0.4,
+      "valid": true,
+      "knee": 0.55,
+      "slope": 0.6,
+      "headroom": 1.3,
+      "recovered_inr": -1002470.0,
+      "share_of_exposure": -0.028116631746527326,
+      "rollbacks": 46,
+      "congestion_cost_txn": 2213.587371315196
+    },
+    {
+      "curve": "brittle",
+      "cap": 0.6,
+      "valid": true,
+      "knee": 0.55,
+      "slope": 0.6,
+      "headroom": 1.3,
+      "recovered_inr": -1073220.0,
+      "share_of_exposure": -0.030100982097227905,
+      "rollbacks": 57,
+      "congestion_cost_txn": 1805.5467566229927
+    },
+    {
+      "curve": "brittle",
+      "cap": 0.8,
+      "valid": true,
+      "knee": 0.55,
+      "slope": 0.6,
+      "headroom": 1.3,
+      "recovered_inr": -1427380.0,
+      "share_of_exposure": -0.04003423326619068,
+      "rollbacks": 67,
+      "congestion_cost_txn": 2574.238846074506
+    },
+    {
+      "curve": "brittle",
+      "cap": 1.0,
+      "valid": true,
+      "knee": 0.55,
+      "slope": 0.6,
+      "headroom": 1.3,
+      "recovered_inr": -1835710.0,
+      "share_of_exposure": -0.051486809643597996,
+      "rollbacks": 72,
+      "congestion_cost_txn": 2889.4202175414466
+    },
+    {
+      "curve": "severe",
+      "cap": 0.2,
+      "valid": true,
+      "knee": 0.45,
+      "slope": 0.9,
+      "headroom": 1.15,
+      "recovered_inr": -191640.0,
+      "share_of_exposure": -0.0036204287774154495,
+      "rollbacks": 98,
+      "congestion_cost_txn": 243.8782682112069
+    },
+    {
+      "curve": "severe",
+      "cap": 0.4,
+      "valid": true,
+      "knee": 0.45,
+      "slope": 0.9,
+      "headroom": 1.15,
+      "recovered_inr": -417790.0,
+      "share_of_exposure": -0.007892814333732002,
+      "rollbacks": 114,
+      "congestion_cost_txn": 721.4395461994573
+    },
+    {
+      "curve": "severe",
+      "cap": 0.6,
+      "valid": true,
+      "knee": 0.45,
+      "slope": 0.9,
+      "headroom": 1.15,
+      "recovered_inr": -73990.0,
+      "share_of_exposure": -0.0013978059133843098,
+      "rollbacks": 111,
+      "congestion_cost_txn": 827.4610230065882
+    },
+    {
+      "curve": "severe",
+      "cap": 0.8,
+      "valid": true,
+      "knee": 0.45,
+      "slope": 0.9,
+      "headroom": 1.15,
+      "recovered_inr": -499420.0,
+      "share_of_exposure": -0.009434953767568482,
+      "rollbacks": 85,
+      "congestion_cost_txn": 413.5681529698777
+    },
+    {
+      "curve": "severe",
+      "cap": 1.0,
+      "valid": true,
+      "knee": 0.45,
+      "slope": 0.9,
+      "headroom": 1.15,
+      "recovered_inr": -31020.0,
+      "share_of_exposure": -0.0005860243199510919,
+      "rollbacks": 92,
+      "congestion_cost_txn": 369.055002681911
+    }
+  ],
+  "best_cap_spread": 0.8,
+  "worst_relative_gap": 0.038829452709448875,
+  "harmful_curves": [
+    "brittle",
+    "severe"
+  ],
+  "beneficial_curves": [
+    "forgiving",
+    "shipped"
+  ]
+}

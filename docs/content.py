@@ -588,7 +588,7 @@ def complete_doc(f: Facts) -> List:
 
     A(P("13. Testing", "h1"))
     A(P(
-        "117 property tests, all passing, and pyflakes clean. They are not "
+        "147 property tests, all passing, and pyflakes clean. They are not "
         "coverage theatre &mdash; each corresponds to a claim made in this "
         "document that would otherwise be taken on trust:"))
     A(bullets([
@@ -620,7 +620,7 @@ def complete_doc(f: Facts) -> List:
         "python -m revenueguard.narrate    --claude             # LLM note vs template\n"
         "python -m revenueguard.execute    --limit 6            # Razorpay test mode, dry run\n"
         "streamlit run app.py                                   # operator console\n\n"
-        "pytest -q                                              # 117 property tests"))
+        "pytest -q                                              # 147 property tests"))
     A(P(
         "Everything is deterministic under <font face='Courier' size='8.5'>"
         "--seed</font>. No number in this document was typed by hand; each is "

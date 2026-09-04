@@ -19,8 +19,8 @@ where gateways get worse as you push traffic at them.
 
 ## Result
 
-**₹1,23,56,984 recovered per two days, 95% CI ₹1,18,56,612 – ₹1,28,57,356.**
-38.4% ± 1.9% of the money the incidents put at risk. **Zero of eight seeds lost
+**₹1,22,91,379 recovered per two days, 95% CI ₹1,17,94,730 – ₹1,27,88,027.**
+38.2% ± 1.8% of the money the incidents put at risk. **Zero of eight seeds lost
 money.**
 
 ```
@@ -29,11 +29,11 @@ python -m revenueguard.validate --seeds 8 --days 2
 
 | across 8 paired seeds | mean | sd | min | max |
 |---|---:|---:|---:|---:|
-| revenue recovered | ₹1,23,56,984 | ₹5,98,421 | ₹1,12,78,430 | ₹1,31,17,900 |
-| share of exposure | 38.4% | 1.9% | 35.6% | 41.0% |
-| success rate gain | 0.578pp | 0.020 | 0.542 | 0.604 |
-| routing actions | 103.1 | 5.7 | 98 | 114 |
-| rollbacks | 39.2 | 4.1 | 34 | 47 |
+| revenue recovered | ₹1,22,91,379 | ₹5,93,968 | ₹1,12,78,430 | ₹1,31,17,900 |
+| share of exposure | 38.2% | 1.8% | 35.6% | 41.0% |
+| success rate gain | 0.576pp | 0.019 | 0.542 | 0.604 |
+| routing actions | 99.8 | 4.5 | 92 | 106 |
+| rollbacks | 37.5 | 4.7 | 32 | 47 |
 
 A single seed cannot distinguish "the router recovers money" from "this sequence
 of coin flips favoured the treatment arm", so the headline is the interval. The
@@ -45,21 +45,21 @@ One seed in detail (`python -m revenueguard.experiment`):
 | | router off | router on | delta |
 |---|---:|---:|---:|
 | attempts | 1,966,458 | 1,966,458 | 0 |
-| successful payments | 1,829,522 | 1,841,236 | **+11,714** |
-| overall success rate | 93.04% | 93.63% | **+0.60pp** |
-| revenue | ₹240.43 cr | ₹241.67 cr | **+₹1.23 cr** |
+| successful payments | 1,829,522 | 1,840,974 | **+11,452** |
+| overall success rate | 93.04% | 93.62% | **+0.58pp** |
+| revenue | ₹240.43 cr | ₹241.64 cr | **+₹1.20 cr** |
 
-Cross-checked independently: measured recovery ₹1.23 cr, while incident exposure
-fell ₹1.32 cr. The ~7% gap is itself informative — it is largely the congestion
+Cross-checked independently: measured recovery ₹1.20 cr, while incident exposure
+fell ₹1.27 cr. The ~5% gap is itself informative — it is largely the congestion
 the router *causes* at the destination, which costs revenue without reducing
 incident exposure. Before gateways had capacity limits these two numbers agreed
 within 1.5%; the divergence appeared the moment loading a gateway had a price.
 
 ---
 
-## Two things the measurements changed
+## Three things the measurements changed
 
-Both were designed one way and rebuilt after the numbers disagreed.
+Each was designed one way and rebuilt after the numbers disagreed.
 
 ### The policy caps were costing 61% of the recovery
 
@@ -108,6 +108,45 @@ tighter inside the union than they would alone, because false alarms add across
 members — which is why the comparison only means anything at a matched budget.
 Shipped as `detectors.default_detector()`.
 
+### Rerouting is not always beneficial, and the system now knows it
+
+The 80% cap was chosen against one congestion curve — and that curve is a
+plausible shape, not a measured one. So `sensitivity.py` sweeps the cap against
+four curves at once, from an acquirer with plenty of headroom to one that falls
+over early.
+
+```
+python -m revenueguard.sensitivity --days 2
+```
+
+| curve | 20% | 40% | 60% | 80% | 100% |
+|---|---:|---:|---:|---:|---:|
+| forgiving | 6.6% | 22.1% | 32.4% | 41.9% | 43.6% |
+| shipped | 6.6% | 22.0% | 30.6% | 37.3% | 38.5% |
+| **brittle** | **0.2%** | **−2.8%** | **−3.0%** | **−4.0%** | **−5.1%** |
+| **severe** | **−0.4%** | **−0.8%** | **−0.1%** | **−0.9%** | **−0.1%** |
+
+On the bottom two rows **every setting loses money**. Those fleets are already
+past their capacity knee at rest, so there is no spare headroom to route into
+and shifting traffic only concentrates load. No per-action guardrail can see
+this — each individual shift looks perfectly reasonable.
+
+*(An earlier version of this report divided one negative recovery by another,
+produced `−302%`, and printed a reassuring verdict. The arithmetic bug is fixed
+and the finding it hid is the reason the next paragraph exists.)*
+
+So the system now measures **the realised effect of its own shifts**. Twenty
+minutes after each one it compares the key's success rate across *every* gateway
+— because moving traffic off a sick gateway trivially improves that gateway;
+the question is whether the customer got paid. If the recent record says the
+shifts are making things worse, it halts all routing and escalates.
+
+It behaves proportionally: 0 trips on `forgiving`, 1 on `shipped`, 2 on
+`brittle`, 6 on `severe`. The insurance costs about **₹65,000 of the headline —
+0.5%** — and roughly halves the damage where the strategy does not work. It does
+not eliminate it, and the honest statement is that **this system needs acquirers
+with spare capacity to be worth deploying.**
+
 ---
 
 ## Why the evaluation is trustworthy
@@ -155,7 +194,7 @@ python -m revenueguard.execute    --limit 6            # Razorpay test mode, dry
 streamlit run app.py                                   # operator console
 
 docker compose up --build                              # service + console
-pytest -q                                              # 117 property tests
+pytest -q                                              # 147 property tests
 ```
 
 Deterministic under `--seed`. **No number in this README was typed by hand.**
@@ -316,6 +355,8 @@ revenueguard/
   executor.py       Razorpay test-mode execution, dry run by default
   metrics.py        TTD, false alarms per 1k slice-hours, exposure
   bench.py sweep.py detector benchmarks
+  sensitivity.py    does the 80% cap depend on a curve we guessed?
+  applier.py        the last mile: delivering a recommendation to something
   experiment.py     control vs treatment - one seed
   validate.py       paired multi-seed validation with a confidence interval
   stress.py         does shifting harder recover more?
@@ -328,7 +369,7 @@ revenueguard/
 docs/               the two project PDFs, generated from bench/results
 DEPLOY.md           running it against real traffic, and what is still missing
 SUBMIT.md           submission checklist, video script, panel prep
-tests/              117 property tests
+tests/              147 property tests
 ```
 
 `pyflakes` clean.
@@ -352,6 +393,8 @@ two produce identical results.
 | **Authentication** | HMAC request signing or a bearer token on `/ingest`. The service refuses to start without one; open is something you opt into, not something you forget. |
 | **Alerting** | Escalations and rollbacks to a webhook, on their own thread with a bounded queue. A dead incident channel can never stall the control loop. |
 | **Observability** | Prometheus at `/metrics`, JSON logs, per-tick duration, ingest and alert counters. |
+| **Failover** | A lease in the shared store elects one active instance; standbys take over if it stops renewing. A stalled node that loses its lease cannot finish the tick it was in — it must stand down. Failover, not horizontal scaling: two instances each seeing half the stream would both misjudge the fleet. |
+| **The last mile** | `applier.py` delivers recommendations to a webhook or an atomically-written config file, in `off` / `notify` / `auto` modes. Only changed keys are pushed. |
 
 It emits recommendations and does not apply them, because acquirer selection is
 not an endpoint a third party can call. `DEPLOY.md` covers the integration, the
@@ -365,9 +408,14 @@ capacity curve calibrated to real acquirers rather than a plausible shape.
 - **The world is simulated.** Gateway health, demand, incidents and the
   congestion curve are ours. What is *not* ours is the detector's view of them,
   which is the part under evaluation. A deployment replaces `world.py`.
+- **This needs acquirers with spare capacity.** On a fleet already past its
+  capacity knee, rerouting cannot help and the sweep shows it loses money at
+  every setting. The efficacy breaker limits the damage rather than removing it.
 - **The congestion curve is a plausible shape, not a measured one.** Knee at 70%
-  utilisation, ~10% success-rate loss at 100% of capacity. It was chosen before
-  running the sweep, but a real acquirer's curve would move the 80% cap.
+  utilisation, ~10% success-rate loss at 100% of capacity. Across the curves
+  where routing helps at all, holding 80% costs at most 3.9% — so the guess is
+  not load-bearing *for that choice*. It is load-bearing for whether the system
+  helps at all.
 - **38% of exposure, not 90%.** Detection latency and the remaining caps set
   that ceiling.
 - **~39 rollbacks against ~103 actions.** Each is a case where the destination

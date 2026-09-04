@@ -127,6 +127,8 @@ CSV columns: `minute, gateway, method, issuer, attempts, successes`.
 | `revenueguard_ingest_dropped_late_total` rising | a producer is behind; baselines are being starved |
 | `revenueguard_open_diversions` stuck for hours | something diverted and never healed |
 | `revenueguard_alerts_failed_total` rising | escalations are not reaching anyone |
+| `revenueguard_efficacy_breaker_open` = 1 | rerouting is not helping; read the ledger before re-enabling |
+| `revenueguard_is_active` = 0 everywhere | no instance holds the lease; nothing is deciding |
 | `revenueguard_minute` flat | the tick loop has stopped |
 
 ---
@@ -181,20 +183,48 @@ Closed:
 - [x] **Observability** — Prometheus metrics, JSON logs, per-tick duration.
 - [x] **Graceful shutdown** — final checkpoint on the way out.
 
+- [x] **Failover** — a lease in the shared store elects one active instance.
+      Standbys poll, and take over with state rebuilt from the store if the
+      holder stops renewing. A node that stalls past its lease cannot finish
+      the tick it was in: it must stand down, because another instance is
+      already the one deciding.
+- [x] **The last mile** — `applier.py` delivers recommendations to a webhook or
+      an atomically written config file, in `off` / `notify` / `auto` modes.
+      Only changed keys are pushed.
+- [x] **A safety net for the strategy itself** — the efficacy breaker (below).
+
+### Read this before deploying: it does not always help
+
+`sensitivity.py` sweeps the shift cap against four congestion curves. On two of
+them — fleets already running past their capacity knee at rest — **every setting
+loses money.** There is no spare headroom to route into, so shifting traffic
+only concentrates load.
+
+No per-action guardrail can catch this; each individual shift looks fine. So the
+control plane measures **the realised effect of its own shifts**: twenty minutes
+after each one it compares the key's success rate across every gateway, and if
+the recent record says the shifts are doing harm it halts routing and escalates
+(`efficacy_breaker`). It engages proportionally — never on a healthy fleet,
+hard on a saturated one — and costs about 0.5% of the headline as insurance.
+
+**It limits the damage; it does not remove it.** If your acquirers run close to
+saturation, this system is not worth deploying, and the way to find out before
+you deploy is to replay a historical incident through `CsvSource` and look at
+`revenueguard_efficacy_breaker_trips_total`.
+
 Still open, honestly:
 
-- [ ] **Calibrate the capacity curve.** `capacity.py` uses a plausible shape,
-      not a measured one, and that curve is what sets the 80% shift cap. Fit it
-      to your acquirers' real behaviour under load. **The most load-bearing
-      unknown in the project.**
+- [ ] **Calibrate the capacity curve.** `capacity.py` uses a plausible shape.
+      Across the curves where routing helps, holding the 80% cap costs at most
+      3.9%, so the guess is not load-bearing for *that choice* — but it is
+      load-bearing for whether the system helps at all.
 - [ ] **Re-run the sweeps against your fleet.** `sweep.py` chose the detector's
-      operating point and `stress.py` chose the shift cap, both against the
-      simulator. Your slice count, volume distribution and failure shapes will
-      move both.
-- [ ] **Single process by design.** All state is in this process, so two
-      replicas would each see half the ingest stream and disagree about the
-      fleet. Run one. For HA the state has to move to Postgres and the loop
-      needs leader election — a real piece of work, not a config change.
+      operating point and `stress.py` the shift cap, both against the simulator.
+      Your slice count, volume distribution and failure shapes will move both.
+- [ ] **Failover, not horizontal scaling.** Exactly one instance is ever active,
+      because two would each see half the ingest stream and both misjudge the
+      fleet. With SQLite the replicas must share a volume; across machines the
+      store has to move to Postgres — real work, not a config change.
 - [ ] **TLS.** Terminate at your ingress. The service speaks plain HTTP.
 - [ ] **Back up the state volume.** Losing it costs a three-hour blind spot
       while baselines refill. Not fatal, but avoidable.
@@ -213,6 +243,10 @@ Still open, honestly:
 | `REVENUEGUARD_WARM_MINUTES` | `220` | History replayed on boot. |
 | `REVENUEGUARD_ALERT_WEBHOOK` | — | Where escalations go. Unset disables alerting. |
 | `REVENUEGUARD_LOG_LEVEL` | `INFO` | |
+| `REVENUEGUARD_APPLY_MODE` | `off` | `off` publishes at `/routing` only; `notify` sends changes framed as proposals; `auto` sends them as instructions. Identical payloads — the difference is who reads them. |
+| `REVENUEGUARD_APPLY_WEBHOOK` | — | Where recommendations go. |
+| `REVENUEGUARD_APPLY_FILE` | — | Alternative: a config file, written atomically. |
+| `REVENUEGUARD_LEASE_TTL` | `3 × tick` | How long before a silent holder is presumed dead. |
 
 Policy bounds live in `PolicyConfig` (`revenueguard/policy.py`), not in
 environment variables, on purpose: changing one should be a reviewed commit with

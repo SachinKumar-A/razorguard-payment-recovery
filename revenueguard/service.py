@@ -38,11 +38,12 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
 from .alerts import Alerter, alerts_from_ledger
+from .applier import ChangeTracker, build_from_env, recommendations_from
 from .config import METHOD_TICKET, METHODS
 from .control_plane import HISTORY_MIN, ControlPlane, RunOutcome
 from .detectors import default_detector
 from .ingest import BufferedSource, PaymentOutcome
-from .persistence import Store, checkpoint
+from .persistence import Lease, Store, checkpoint
 from .policy import PolicyConfig, PolicyEngine
 from .security import AuthConfig, AuthError, verify
 
@@ -52,6 +53,9 @@ STATE_PATH = os.environ.get("REVENUEGUARD_STATE", "state/revenueguard.db")
 #: full baseline window rather than a partial one.
 WARM_MINUTES = int(os.environ.get("REVENUEGUARD_WARM_MINUTES",
                                   str(HISTORY_MIN + 40)))
+#: A lease must outlive several ticks, or a slow minute looks like a dead node.
+LEASE_TTL = float(os.environ.get("REVENUEGUARD_LEASE_TTL",
+                                 str(max(90.0, TICK_SECONDS * 3))))
 
 logging.basicConfig(
     level=os.environ.get("REVENUEGUARD_LOG_LEVEL", "INFO"),
@@ -83,8 +87,13 @@ class Engine:
     def __init__(self) -> None:
         self.auth = AuthConfig.from_env()
         self.store = Store(STATE_PATH)
+        self.lease = Lease(self.store, ttl_seconds=LEASE_TTL)
         self.alerter = Alerter()
+        self.applier = build_from_env()
+        self.changes = ChangeTracker()
         self.source = BufferedSource(_ticket_for)
+        self.applied = 0
+        self.apply_failures = 0
 
         self.plane = ControlPlane(
             None, default_detector(),
@@ -99,6 +108,13 @@ class Engine:
         self._task: Optional[asyncio.Task] = None
 
         self.minute = self._restore()
+        # Only one instance may act. The rest wait, warm, and take over if this
+        # one dies - see persistence.Lease for why sharing is not an option.
+        if self.lease.try_acquire():
+            log.info("active: holding the lease as %s", self.lease.holder)
+        else:
+            log.info("standby: %s holds the lease; waiting",
+                     self.lease.status().get("holder"))
 
     def _restore(self) -> int:
         """Rebuild everything derived, then re-adopt what was in flight."""
@@ -123,6 +139,28 @@ class Engine:
                         "supervision resumes once baselines refill", diversions)
         return minute
 
+    def _become_active(self) -> None:
+        """Take over from a dead holder, with state rebuilt from the store."""
+        log.info("taking over the lease as %s", self.lease.holder)
+        self.plane = ControlPlane(
+            None, default_detector(),
+            policy=PolicyEngine(PolicyConfig()), enable_routing=True,
+            source=self.source)
+        self.changes = ChangeTracker()
+        self.minute = self._restore()
+
+    def _push_recommendations(self) -> None:
+        recs = recommendations_from(self.plane.routing, self.minute,
+                                    reason="revenueguard recommendation")
+        changed, skipped = self.changes.changed(recs)
+        if not changed:
+            return
+        result = self.applier.apply(changed)
+        self.applied += result.delivered
+        self.apply_failures += result.failed
+        for err in result.errors:
+            log.error("apply failed: %s", err)
+
     def tick_once(self) -> None:
         started = time.perf_counter()
         try:
@@ -137,6 +175,8 @@ class Engine:
         else:
             for alert in alerts_from_ledger(self.outcome.ledger, self.minute):
                 self.alerter.send(alert)
+            if self.applier.mode != "off":
+                self._push_recommendations()
         finally:
             try:
                 checkpoint(self.store, self.plane, self.outcome, self.minute)
@@ -150,11 +190,29 @@ class Engine:
     async def loop(self) -> None:
         while True:
             await asyncio.sleep(TICK_SECONDS)
+            if not self.lease.is_active:
+                # Standby. Poll for the lease; take over only if the holder
+                # has stopped renewing.
+                if await asyncio.to_thread(self.lease.try_acquire):
+                    await asyncio.to_thread(self._become_active)
+                continue
+
+            # Renew before acting, never after. A process that stalled long
+            # enough to lose its lease must not finish the tick it was in the
+            # middle of - another instance is already the one deciding.
+            if not await asyncio.to_thread(self.lease.renew):
+                log.warning("lost the lease; standing down without acting")
+                continue
+
             # Off the event loop: a tick does real statistical work and a
             # synchronous SQLite commit, neither of which should stall /ingest.
             await asyncio.to_thread(self.tick_once)
 
     def close(self) -> None:
+        if self.lease.is_active:
+            # Hand over immediately rather than making a standby wait out the
+            # full TTL after a planned shutdown.
+            self.lease.release()
         try:
             checkpoint(self.store, self.plane, self.outcome, self.minute - 1)
         except Exception as exc:  # pragma: no cover - shutdown path
@@ -196,6 +254,7 @@ def health() -> Dict[str, object]:
     e = _engine()
     return {
         "ok": True,
+        "role": "active" if e.lease.is_active else "standby",
         "uptime_s": round(time.time() - e.started, 1),
         "minute": e.minute,
         "ticks": e.ticks,
@@ -203,6 +262,7 @@ def health() -> Dict[str, object]:
         "tick_seconds": TICK_SECONDS,
         "auth": e.auth.mode,
         "alerts": e.alerter.enabled,
+        "apply_mode": e.applier.mode,
     }
 
 
@@ -282,6 +342,17 @@ def state() -> Dict[str, object]:
             "buffered_minutes": e.source.buffered_minutes,
         },
         "alerts": e.alerter.stats(),
+        "lease": e.lease.status(),
+        "apply": {
+            "mode": e.applier.mode,
+            "delivered": e.applied,
+            "failed": e.apply_failures,
+        },
+        "efficacy_breaker": {
+            "open": e.plane.breaker_open,
+            "trips": e.plane.breaker_trips,
+            "samples": len(e.plane.efficacy),
+        },
         "methods_known": METHODS,
     }
 
@@ -322,6 +393,17 @@ def metrics() -> str:
          "Duration of the last tick.", round(e.last_tick_ms, 2)),
         ("revenueguard_alerts_failed_total", "counter",
          "Webhook deliveries that failed.", a["failed"]),
+        ("revenueguard_is_active", "gauge",
+         "1 if this instance holds the lease.",
+         1 if e.lease.is_active else 0),
+        ("revenueguard_efficacy_breaker_open", "gauge",
+         "1 while shifting is halted for not helping.",
+         1 if e.plane.breaker_open else 0),
+        ("revenueguard_efficacy_breaker_trips_total", "counter",
+         "Times the strategy was judged to be doing harm.",
+         e.plane.breaker_trips),
+        ("revenueguard_recommendations_applied_total", "counter",
+         "Routing changes delivered downstream.", e.applied),
     ]
     out = []
     for name, kind, help_text, value in rows:

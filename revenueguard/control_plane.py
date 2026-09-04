@@ -34,6 +34,17 @@ BASELINE_LAG_MIN = 20
 #: Window used for "how is this slice doing right now".
 RECENT_MIN = 5
 
+#: How long after a shift we look to see whether it actually helped.
+EFFICACY_SETTLE_MIN = 20
+#: Window either side of a shift used to compare the key's overall health.
+EFFICACY_WINDOW_MIN = 10
+#: Shifts to observe before the breaker is allowed to have an opinion.
+EFFICACY_MIN_SAMPLES = 8
+#: Mean realised change below which our own actions are judged harmful.
+EFFICACY_TRIP_PP = -0.005
+#: How long the breaker stays open before allowing another attempt.
+EFFICACY_COOLDOWN_MIN = 120
+
 
 #: Attempts a health estimate needs before it is trusted without widening.
 TRUST_ATTEMPTS = 60
@@ -112,6 +123,26 @@ class HealthTracker:
         if att == 0:
             return HealthEstimate(None, 0, "none", 20)
         return HealthEstimate(suc / att, att, "gateway", 20)
+
+    def key_sr(self, method: str, issuer: str, lo: int, hi: int
+               ) -> Optional[float]:
+        """Success rate for one (method, issuer) across *every* gateway.
+
+        The efficacy check has to be measured here rather than per-slice.
+        Moving traffic off a sick gateway trivially improves that gateway's
+        numbers - the question is whether the customer got paid, which is a
+        property of the key as a whole.
+        """
+        att = suc = 0
+        for key, hist in self._hist.items():
+            _, m, i = key.split("|")
+            if m != method or i != issuer:
+                continue
+            for minute, a, sc in hist:
+                if lo <= minute < hi:
+                    att += a
+                    suc += sc
+        return (suc / att) if att else None
 
     def baseline_sr(self, slice_key: str) -> Optional[float]:
         h = self._hist.get(slice_key)
@@ -194,6 +225,23 @@ class ControlPlane:
                            for m in METHODS for i in ISSUERS]
         self._alarmed_recently: Dict[str, int] = {}
 
+        #: Realised effect of our own recent shifts, in success-rate points.
+        #:
+        #: Every guardrail before this one bounds a *single* action. None of
+        #: them can notice that the strategy itself is not working - and there
+        #: are fleets where it is not. If every gateway is already running past
+        #: its capacity knee, there is no spare headroom to route into, so
+        #: shifting traffic only concentrates load and makes things worse at
+        #: every setting. A sensitivity sweep across congestion curves found
+        #: exactly that, and no per-action bound would ever have caught it.
+        #:
+        #: So the system measures the outcome of its own interventions and
+        #: stops when they stop paying.
+        self.efficacy: Deque[float] = deque(maxlen=20)
+        self._pending_efficacy: List[Tuple[int, str, str, float]] = []
+        self.breaker_tripped_at: Optional[int] = None
+        self.breaker_trips = 0
+
     # -- helpers ----------------------------------------------------------
 
     def _is_alarmed(self, slice_key: str, minute: int, within: int = 15) -> bool:
@@ -235,6 +283,59 @@ class ControlPlane:
         all_alarmed = candidates > 0 and alarmed_candidates == candidates
         return best, best_est, best_alarmed, all_alarmed
 
+    @property
+    def breaker_open(self) -> bool:
+        return self.breaker_tripped_at is not None
+
+    def _breaker_verdict(self, minute: int) -> Optional[float]:
+        """Mean realised effect of recent shifts, once there is enough to judge."""
+        if len(self.efficacy) < EFFICACY_MIN_SAMPLES:
+            return None
+        return sum(self.efficacy) / len(self.efficacy)
+
+    def _update_breaker(self, minute: int, out: RunOutcome) -> None:
+        # Reopen for business after the cooldown, with a clean slate so one bad
+        # spell does not condemn the strategy forever.
+        if self.breaker_tripped_at is not None:
+            if minute - self.breaker_tripped_at >= EFFICACY_COOLDOWN_MIN:
+                self.breaker_tripped_at = None
+                self.efficacy.clear()
+                out.ledger.record(
+                    minute, "decision", "engine",
+                    "efficacy breaker reset; resuming with a clean measurement "
+                    "window",
+                    rule="efficacy_breaker_reset", decision="allow")
+            return
+
+        mean = self._breaker_verdict(minute)
+        if mean is not None and mean < EFFICACY_TRIP_PP:
+            self.breaker_tripped_at = minute
+            self.breaker_trips += 1
+            out.escalated += 1
+            out.ledger.record(
+                minute, "decision", "engine",
+                f"our last {len(self.efficacy)} shifts changed the affected "
+                f"keys by {mean * 100:+.2f}pp on average, so rerouting is "
+                f"making things worse rather than better. Halting all shifts "
+                f"for {EFFICACY_COOLDOWN_MIN} min and escalating - this is the "
+                f"signature of a fleet with no spare headroom to route into.",
+                rule="efficacy_breaker", decision="escalate",
+                mean_effect_pp=round(mean * 100, 3),
+                samples=len(self.efficacy))
+
+    def _settle_efficacy(self, minute: int) -> None:
+        """Score shifts whose settle window has now elapsed."""
+        still_pending = []
+        for due, method, issuer, before in self._pending_efficacy:
+            if minute < due:
+                still_pending.append((due, method, issuer, before))
+                continue
+            after = self.health.key_sr(method, issuer,
+                                       minute - EFFICACY_WINDOW_MIN, minute)
+            if after is not None:
+                self.efficacy.append(after - before)
+        self._pending_efficacy = still_pending
+
     def _divergence(self, method: str, issuer: str) -> float:
         cur = self.routing.current[(method, issuer)]
         base = self.routing.baseline[(method, issuer)]
@@ -267,6 +368,12 @@ class ControlPlane:
                 self._alarmed_recently[obs.slice_key] = minute
 
         out.alarms.extend(new_alarms)
+
+        if self.enable_routing:
+            # Score past shifts before judging new ones, so a decision this
+            # minute sees the most recent evidence available.
+            self._settle_efficacy(minute)
+            self._update_breaker(minute, out)
 
         if new_alarms:
             self._handle_alarms(minute, new_alarms, out)
@@ -346,6 +453,16 @@ class ControlPlane:
         if not self.enable_routing:
             return
 
+        if self.breaker_open:
+            out.blocked += len(alarms)
+            out.ledger.record(
+                minute, "decision", cause.label,
+                f"efficacy breaker open since minute "
+                f"{self.breaker_tripped_at}; refusing to shift traffic that "
+                f"measurement says will not help",
+                rule="efficacy_breaker", decision="block")
+            return
+
         for alarm in alarms:
             source, method, issuer = alarm.slice_key.split("|")
             subject = f"{method}|{issuer}"
@@ -408,6 +525,13 @@ class ControlPlane:
 
             self.policy.record_action(minute, method, issuer, cause.label)
             out.actions += 1
+            # Snapshot the key's health across every gateway, so the effect of
+            # this shift can be scored once it has had time to land.
+            before = self.health.key_sr(method, issuer,
+                                        minute - EFFICACY_WINDOW_MIN, minute)
+            if before is not None:
+                self._pending_efficacy.append(
+                    (minute + EFFICACY_SETTLE_MIN, method, issuer, before))
             self.diversions[(method, issuer)] = Diversion(
                 method=method, issuer=issuer, source=source, target=target,
                 opened_min=minute, shifted=moved)
