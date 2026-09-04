@@ -1,0 +1,24 @@
+services:
+  revenueguard:
+    build: .
+    image: revenueguard:latest
+    ports:
+      - "8000:8000"
+    environment:
+      # One tick per minute in production. Lower it to watch the loop move
+      # during a demo; the control plane's own windows are counted in ticks,
+      # so a very low value compresses its baselines too.
+      REVENUEGUARD_TICK_SECONDS: "60"
+    restart: unless-stopped
+
+  console:
+    build: .
+    image: revenueguard:latest
+    command: >
+      streamlit run app.py
+      --server.port 8501
+      --server.address 0.0.0.0
+      --server.headless true
+    ports:
+      - "8501:8501"
+    restart: unless-stopped

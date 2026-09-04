@@ -1,0 +1,5 @@
+-r requirements.txt
+
+# HTTP service (uvicorn revenueguard.service:app)
+fastapi>=0.110
+uvicorn[standard]>=0.27

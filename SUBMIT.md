@@ -17,13 +17,13 @@ because that is what a reviewer will have.
 git clone <your-repo-url> && cd razorpay
 pip install -r requirements-dev.txt
 
-pytest -q                                    # expect: 67 passed
+pytest -q                                    # expect: 81 passed
 python -m revenueguard.validate --seeds 8 --days 2
 python -m revenueguard.experiment --days 2
 streamlit run app.py                         # expect: console loads
 ```
 
-- [ ] 67 tests pass
+- [ ] 81 tests pass
 - [ ] `validate` reports a CI that excludes zero and 0/8 losing seeds
 - [ ] `experiment` prints **identical attempts in both arms** (if it does not,
       it refuses to report a figure — that is the guard working, but fix it

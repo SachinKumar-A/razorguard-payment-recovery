@@ -154,7 +154,8 @@ python -m revenueguard.narrate    --claude             # LLM note vs template
 python -m revenueguard.execute    --limit 6            # Razorpay test mode, dry run
 streamlit run app.py                                   # operator console
 
-pytest -q                                              # 67 property tests
+docker compose up --build                              # service + console
+pytest -q                                              # 81 property tests
 ```
 
 Deterministic under `--seed`. **No number in this README was typed by hand.**
@@ -318,13 +319,35 @@ revenueguard/
   experiment.py     control vs treatment - one seed
   validate.py       paired multi-seed validation with a confidence interval
   stress.py         does shifting harder recover more?
+  ingest.py         the seam where real payment outcomes replace the simulator
+  service.py        HTTP service: same loop, wall-clock timer, live data
   demo.py narrate.py execute.py
 docs/               the two project PDFs, generated from bench/results
+DEPLOY.md           running it against real traffic, and what is still missing
 SUBMIT.md           submission checklist, video script, panel prep
-tests/              67 property tests
+tests/              81 property tests
 ```
 
 `pyflakes` clean.
+
+---
+
+## Deploying it
+
+`docker compose up --build` gives you the service on `:8000` and the console on
+`:8501`. Real payment outcomes go in at `POST /ingest` as aggregated counts —
+`(gateway, method, issuer, attempts, successes)`, which is all the detector ever
+needed — and recommendations come out at `GET /routing`.
+
+The deployed path is the benchmarked path: the service calls
+`ControlPlane.tick`, which is exactly what `run` calls, and a test asserts the
+two produce identical results.
+
+It emits recommendations and does not apply them, because acquirer selection is
+not an endpoint a third party can call. `DEPLOY.md` covers the integration, the
+three ways to act on the output, and an honest list of what is still missing
+before production — persistence, authentication, and a capacity curve calibrated
+to real acquirers rather than a plausible shape.
 
 ---
 

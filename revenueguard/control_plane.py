@@ -163,14 +163,24 @@ class RunOutcome:
 class ControlPlane:
     def __init__(
         self,
-        world: World,
+        world: Optional[World],
         detector: Detector,
         policy: Optional[PolicyEngine] = None,
         enable_routing: bool = True,
         restore_after_healthy_min: int = 10,
         rollback_drop_pp: float = 6.0,
+        source=None,
     ):
+        #: Where observations come from. `None` means the world's own simulator,
+        #: which is the benchmark path. A deployment passes an ObservationSource
+        #: (see ingest.py) and nothing else in this class changes - that seam is
+        #: the whole reason the loop was never allowed to see the incident plan.
+        self.source = source
         self.world = world
+        if world is None and source is None:
+            raise ValueError(
+                "a control plane needs either a World to simulate or an "
+                "ObservationSource to read from")
         self.detector = detector
         self.policy = policy or PolicyEngine(PolicyConfig())
         self.enable_routing = enable_routing
@@ -232,29 +242,44 @@ class ControlPlane:
 
     # -- the loop ---------------------------------------------------------
 
+    def observe_minute(self, minute: int) -> List[Observation]:
+        """Fetch one minute of outcomes from whichever source is configured."""
+        if self.source is not None:
+            return self.source.poll(minute)
+        return self.world.step(minute, self.routing)
+
+    def tick(self, minute: int, out: RunOutcome) -> List[Alarm]:
+        """Advance the loop by exactly one minute.
+
+        Split out of `run` so a long-lived service can drive the same code path
+        on a wall-clock timer. A deployment that reimplemented this loop would
+        be running something the benchmarks never tested.
+        """
+        observations = self.observe_minute(minute)
+        out.observations.extend(observations)
+
+        new_alarms: List[Alarm] = []
+        for obs in observations:
+            self.health.update(obs)
+            alarm = self.detector.observe(obs)
+            if alarm is not None:
+                new_alarms.append(alarm)
+                self._alarmed_recently[obs.slice_key] = minute
+
+        out.alarms.extend(new_alarms)
+
+        if new_alarms:
+            self._handle_alarms(minute, new_alarms, out)
+
+        if self.enable_routing:
+            self._supervise(minute, out)
+
+        return new_alarms
+
     def run(self, minutes: int) -> RunOutcome:
         out = RunOutcome(minutes=minutes)
-
         for t in range(minutes):
-            observations = self.world.step(t, self.routing)
-            out.observations.extend(observations)
-
-            new_alarms: List[Alarm] = []
-            for obs in observations:
-                self.health.update(obs)
-                alarm = self.detector.observe(obs)
-                if alarm is not None:
-                    new_alarms.append(alarm)
-                    self._alarmed_recently[obs.slice_key] = t
-
-            out.alarms.extend(new_alarms)
-
-            if new_alarms:
-                self._handle_alarms(t, new_alarms, out)
-
-            if self.enable_routing:
-                self._supervise(t, out)
-
+            self.tick(t, out)
         return out
 
     def _handle_alarms(self, minute: int, alarms: List[Alarm],
