@@ -30,8 +30,12 @@ class AuditEvent:
 
 
 class AuditLedger:
-    def __init__(self) -> None:
+    def __init__(self, start_seq: int = 0) -> None:
+        #: Sequence numbers continue across restarts. Restarting at 1 would
+        #: make the ledger look append-only within a process while silently
+        #: colliding with everything written before it.
         self._events: List[AuditEvent] = []
+        self._seq = start_seq
 
     def __len__(self) -> int:
         return len(self._events)
@@ -41,7 +45,8 @@ class AuditLedger:
 
     def record(self, minute: int, kind: str, subject: str, summary: str,
                rule: Optional[str] = None, **evidence: Any) -> AuditEvent:
-        ev = AuditEvent(seq=len(self._events) + 1, minute=minute, kind=kind,
+        self._seq += 1
+        ev = AuditEvent(seq=self._seq, minute=minute, kind=kind,
                         subject=subject, summary=summary, rule=rule,
                         evidence=evidence)
         self._events.append(ev)

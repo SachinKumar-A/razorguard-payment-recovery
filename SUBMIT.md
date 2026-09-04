@@ -17,13 +17,13 @@ because that is what a reviewer will have.
 git clone <your-repo-url> && cd razorpay
 pip install -r requirements-dev.txt
 
-pytest -q                                    # expect: 81 passed
+pytest -q                                    # expect: 117 passed
 python -m revenueguard.validate --seeds 8 --days 2
 python -m revenueguard.experiment --days 2
 streamlit run app.py                         # expect: console loads
 ```
 
-- [ ] 81 tests pass
+- [ ] 117 tests pass
 - [ ] `validate` reports a CI that excludes zero and 0/8 losing seeds
 - [ ] `experiment` prints **identical attempts in both arms** (if it does not,
       it refuses to report a figure — that is the guard working, but fix it
@@ -164,7 +164,7 @@ curl localhost:8000/routing
 > sampled token in the path of a money-moving action can't be reproduced or
 > defended.
 >
-> 81 property tests. Every number in the README is printed by a command in the
+> 117 property tests. Every number in the README is printed by a command in the
 > repo — none of it is typed by hand."
 
 **Do not** show: the Streamlit console (it's slower than the CLI and says less),

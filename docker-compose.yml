@@ -4,12 +4,24 @@ services:
     image: revenueguard:latest
     ports:
       - "8000:8000"
+    volumes:
+      # State must outlive the container. Without this a redeploy is a blind
+      # spot while baselines refill.
+      - revenueguard-state:/data
     environment:
-      # One tick per minute in production. Lower it to watch the loop move
-      # during a demo; the control plane's own windows are counted in ticks,
-      # so a very low value compresses its baselines too.
+      # One tick per minute in production. The detector's windows are counted
+      # in ticks, so lowering this for a demo compresses its baselines too.
       REVENUEGUARD_TICK_SECONDS: "60"
+      # Authentication is required. Set one of these; the service refuses to
+      # start otherwise, which is the correct default for an endpoint that
+      # steers money decisions.
+      REVENUEGUARD_HMAC_KEY: "${REVENUEGUARD_HMAC_KEY:?set REVENUEGUARD_HMAC_KEY or REVENUEGUARD_TOKEN in .env}"
+      REVENUEGUARD_ALERT_WEBHOOK: "${REVENUEGUARD_ALERT_WEBHOOK:-}"
+      REVENUEGUARD_LOG_LEVEL: "INFO"
     restart: unless-stopped
+    # Single replica by design - see the Dockerfile CMD.
+    deploy:
+      replicas: 1
 
   console:
     build: .
@@ -22,3 +34,6 @@ services:
     ports:
       - "8501:8501"
     restart: unless-stopped
+
+volumes:
+  revenueguard-state:

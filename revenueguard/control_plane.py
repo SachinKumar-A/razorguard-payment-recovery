@@ -276,6 +276,50 @@ class ControlPlane:
 
         return new_alarms
 
+    def warm(self, observations: List[Observation]) -> int:
+        """Rebuild statistical state from stored observations, without acting.
+
+        Used on restart. The observations are pushed through exactly the code
+        that consumed them when they were live - the health tracker and the
+        detector - but `_handle_alarms` and `_supervise` are not called, so the
+        replay cannot re-propose actions that were already taken or roll back a
+        diversion on stale evidence.
+
+        Serialising detector internals instead would mean maintaining a second
+        representation of every statistical structure, plus a migration for
+        each. Replay needs neither, and what it restores is by construction
+        exactly what the live path would have held.
+
+        Returns the number of observations replayed.
+        """
+        for obs in sorted(observations, key=lambda o: o.minute):
+            self.health.update(obs)
+            alarm = self.detector.observe(obs)
+            if alarm is not None:
+                # Remember that this slice was recently alarming, so a
+                # destination that was unhealthy before the restart is not
+                # immediately treated as a clean target afterwards.
+                self._alarmed_recently[obs.slice_key] = obs.minute
+        return len(observations)
+
+    def restore_diversions(self, rows: List[Dict[str, object]]) -> int:
+        """Re-adopt diversions that were open when the process stopped.
+
+        Without this a restart would leave traffic diverted with nothing
+        watching it: the weights are restored from the store, but no supervisor
+        would ever roll them back or ease them home. That is a worse state than
+        either extreme.
+        """
+        for row in rows:
+            key = (str(row["method"]), str(row["issuer"]))
+            self.diversions[key] = Diversion(
+                method=str(row["method"]), issuer=str(row["issuer"]),
+                source=str(row["source"]), target=str(row["target"]),
+                opened_min=int(row["opened_min"]), shifted=float(row["shifted"]),
+                healthy_streak=int(row["healthy_streak"]),
+                restoring=bool(row["restoring"]))
+        return len(rows)
+
     def run(self, minutes: int) -> RunOutcome:
         out = RunOutcome(minutes=minutes)
         for t in range(minutes):

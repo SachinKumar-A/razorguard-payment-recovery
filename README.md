@@ -155,7 +155,7 @@ python -m revenueguard.execute    --limit 6            # Razorpay test mode, dry
 streamlit run app.py                                   # operator console
 
 docker compose up --build                              # service + console
-pytest -q                                              # 81 property tests
+pytest -q                                              # 117 property tests
 ```
 
 Deterministic under `--seed`. **No number in this README was typed by hand.**
@@ -321,11 +321,14 @@ revenueguard/
   stress.py         does shifting harder recover more?
   ingest.py         the seam where real payment outcomes replace the simulator
   service.py        HTTP service: same loop, wall-clock timer, live data
+  persistence.py    durable state; a restart replays rather than starts blind
+  security.py       request signing / bearer auth for the ingest endpoint
+  alerts.py         escalations to a webhook, off the loop's thread
   demo.py narrate.py execute.py
 docs/               the two project PDFs, generated from bench/results
 DEPLOY.md           running it against real traffic, and what is still missing
 SUBMIT.md           submission checklist, video script, panel prep
-tests/              81 property tests
+tests/              117 property tests
 ```
 
 `pyflakes` clean.
@@ -343,11 +346,17 @@ The deployed path is the benchmarked path: the service calls
 `ControlPlane.tick`, which is exactly what `run` calls, and a test asserts the
 two produce identical results.
 
+| | |
+|---|---|
+| **Durable state** | SQLite in WAL mode, checkpointed each tick. A restart replays the stored stream back through the detector, restores the routing table and re-adopts open diversions — the last of those matters most, because restored weights with no supervisor watching them is worse than either extreme. |
+| **Authentication** | HMAC request signing or a bearer token on `/ingest`. The service refuses to start without one; open is something you opt into, not something you forget. |
+| **Alerting** | Escalations and rollbacks to a webhook, on their own thread with a bounded queue. A dead incident channel can never stall the control loop. |
+| **Observability** | Prometheus at `/metrics`, JSON logs, per-tick duration, ingest and alert counters. |
+
 It emits recommendations and does not apply them, because acquirer selection is
 not an endpoint a third party can call. `DEPLOY.md` covers the integration, the
-three ways to act on the output, and an honest list of what is still missing
-before production — persistence, authentication, and a capacity curve calibrated
-to real acquirers rather than a plausible shape.
+three ways to act on the output, and what is genuinely still open — chiefly a
+capacity curve calibrated to real acquirers rather than a plausible shape.
 
 ---
 

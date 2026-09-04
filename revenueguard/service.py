@@ -1,51 +1,63 @@
-"""HTTP service: run the control plane against a live stream of outcomes.
+"""HTTP service: the control plane against a live stream, with state that survives.
 
     uvicorn revenueguard.service:app --host 0.0.0.0 --port 8000
 
 What this is
 ------------
 The same control loop the benchmarks run, driven on a wall-clock timer instead
-of a simulated one, consuming real payment outcomes posted to `/ingest` instead
-of a simulator. `ControlPlane.tick` is called here exactly as `run` calls it, so
-the deployed path is the tested path.
+of a simulated one, consuming real payment outcomes posted to `/ingest`.
+`ControlPlane.tick` is called here exactly as `run` calls it, and a test asserts
+the two produce identical results - so the deployed path is the tested path
+rather than a reimplementation of it.
 
 What it deliberately does not do
 --------------------------------
 It does not apply its own routing decisions. Acquirer selection is not an
 endpoint a third party can call, so this service **emits recommendations** at
-`GET /routing` and records them in the audit ledger; something on your side -
-a traffic manager, a config service, or a human - decides whether to act. That
-boundary is the honest one, and pretending otherwise would be the single
-easiest way to make this project untrue.
+`GET /routing` and records them; something on your side acts on them.
 
-Endpoints
----------
-    POST /ingest    push a batch of aggregated outcomes for the current minute
-    GET  /routing   current recommended weights, and which are diverted
-    GET  /state     health of the loop: minute, alarms, actions, buffer depth
-    GET  /audit     recent ledger entries, refusals included
-    GET  /health    liveness
+Operational shape
+-----------------
+State is durable (`persistence.py`): a restart replays the stored observation
+stream back through the detector, restores the routing table and re-adopts open
+diversions, so a deploy is not a window in which the system is awake and blind.
+`/ingest` is authenticated (`security.py`). Escalations and rollbacks reach a
+webhook off the loop's thread (`alerts.py`). `/metrics` speaks Prometheus.
 """
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import time
 from contextlib import asynccontextmanager
 from typing import Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
+from .alerts import Alerter, alerts_from_ledger
 from .config import METHOD_TICKET, METHODS
-from .control_plane import ControlPlane, RunOutcome
+from .control_plane import HISTORY_MIN, ControlPlane, RunOutcome
 from .detectors import default_detector
 from .ingest import BufferedSource, PaymentOutcome
+from .persistence import Store, checkpoint
 from .policy import PolicyConfig, PolicyEngine
+from .security import AuthConfig, AuthError, verify
 
-#: Seconds per control-plane tick. One minute in production; overridable so a
-#: demo does not have to run in real time.
 TICK_SECONDS = float(os.environ.get("REVENUEGUARD_TICK_SECONDS", "60"))
+STATE_PATH = os.environ.get("REVENUEGUARD_STATE", "state/revenueguard.db")
+#: Replay a little more than the health tracker holds, so a restart restores a
+#: full baseline window rather than a partial one.
+WARM_MINUTES = int(os.environ.get("REVENUEGUARD_WARM_MINUTES",
+                                  str(HISTORY_MIN + 40)))
+
+logging.basicConfig(
+    level=os.environ.get("REVENUEGUARD_LOG_LEVEL", "INFO"),
+    format='{"ts":"%(asctime)s","level":"%(levelname)s",'
+           '"logger":"%(name)s","msg":"%(message)s"}')
+log = logging.getLogger("revenueguard")
 
 
 def _ticket_for(method: str) -> float:
@@ -61,72 +73,151 @@ class OutcomeIn(BaseModel):
 
 
 class IngestIn(BaseModel):
-    outcomes: List[OutcomeIn]
-    #: Optional explicit minute. Omit and the service uses its current tick,
-    #: which is what a live producer should do.
+    outcomes: List[OutcomeIn] = Field(..., max_length=5000)
     minute: Optional[int] = None
 
 
 class Engine:
-    """Holds the loop, the buffer, and the clock."""
+    """The loop, its state, and everything that outlives a restart."""
 
     def __init__(self) -> None:
+        self.auth = AuthConfig.from_env()
+        self.store = Store(STATE_PATH)
+        self.alerter = Alerter()
         self.source = BufferedSource(_ticket_for)
-        # No World at all: with a source configured the simulator is never
-        # reachable, and passing a half-built one would only invite someone to
-        # start reading from it.
+
         self.plane = ControlPlane(
             None, default_detector(),
             policy=PolicyEngine(PolicyConfig()), enable_routing=True,
             source=self.source)
+
         self.outcome = RunOutcome(minutes=0)
-        self.minute = 0
         self.started = time.time()
         self.ticks = 0
+        self.tick_errors = 0
+        self.last_tick_ms = 0.0
         self._task: Optional[asyncio.Task] = None
+
+        self.minute = self._restore()
+
+    def _restore(self) -> int:
+        """Rebuild everything derived, then re-adopt what was in flight."""
+        observations = self.store.recent_observations(WARM_MINUTES)
+        replayed = self.plane.warm(observations)
+        weights = self.store.load_routing_into(self.plane.routing)
+        diversions = self.plane.restore_diversions(self.store.load_diversions())
+
+        # The ledger continues its sequence rather than restarting at 1.
+        self.outcome.ledger._seq = self.store.max_audit_seq
+
+        minute = self.store.minute + 1 if replayed else 0
+        log.info("restored: replayed=%d weights=%d diversions=%d "
+                 "next_minute=%d auth=%s alerts=%s",
+                 replayed, weights, diversions, minute, self.auth.mode,
+                 "on" if self.alerter.enabled else "off")
+        if diversions and not replayed:
+            # Weights diverted with no history to judge them by. The supervisor
+            # holds until baselines refill, which is the safe behaviour, but it
+            # is worth saying out loud rather than discovering later.
+            log.warning("re-adopted %d diversion(s) with no replayed history; "
+                        "supervision resumes once baselines refill", diversions)
+        return minute
+
+    def tick_once(self) -> None:
+        started = time.perf_counter()
+        try:
+            self.plane.tick(self.minute, self.outcome)
+        except Exception as exc:
+            self.tick_errors += 1
+            log.exception("tick %d failed: %s", self.minute, exc)
+            self.outcome.ledger.record(
+                self.minute, "decision", "engine",
+                f"tick failed: {type(exc).__name__}: {exc}",
+                rule="tick_error", decision="block")
+        else:
+            for alert in alerts_from_ledger(self.outcome.ledger, self.minute):
+                self.alerter.send(alert)
+        finally:
+            try:
+                checkpoint(self.store, self.plane, self.outcome, self.minute)
+            except Exception as exc:
+                # Losing durability is bad; losing the loop is worse.
+                log.error("checkpoint failed at minute %d: %s", self.minute, exc)
+            self.last_tick_ms = (time.perf_counter() - started) * 1000.0
+            self.minute += 1
+            self.ticks += 1
 
     async def loop(self) -> None:
         while True:
             await asyncio.sleep(TICK_SECONDS)
-            try:
-                self.plane.tick(self.minute, self.outcome)
-            except Exception as exc:  # pragma: no cover - defensive
-                # A bad minute must not kill the loop; the next one may be fine.
-                self.outcome.ledger.record(
-                    self.minute, "decision", "engine",
-                    f"tick failed: {type(exc).__name__}: {exc}",
-                    rule="tick_error", decision="block")
-            self.minute += 1
-            self.ticks += 1
+            # Off the event loop: a tick does real statistical work and a
+            # synchronous SQLite commit, neither of which should stall /ingest.
+            await asyncio.to_thread(self.tick_once)
+
+    def close(self) -> None:
+        try:
+            checkpoint(self.store, self.plane, self.outcome, self.minute - 1)
+        except Exception as exc:  # pragma: no cover - shutdown path
+            log.error("final checkpoint failed: %s", exc)
+        self.alerter.close()
+        self.store.close()
+        log.info("stopped cleanly at minute %d", self.minute)
 
 
-engine = Engine()
+engine: Optional[Engine] = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global engine
+    engine = Engine()
     engine._task = asyncio.create_task(engine.loop())
-    yield
-    if engine._task:
-        engine._task.cancel()
+    try:
+        yield
+    finally:
+        if engine._task:
+            engine._task.cancel()
+        engine.close()
 
 
-app = FastAPI(title="RevenueGuard", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="RevenueGuard", version="1.0.0", lifespan=lifespan)
 
+
+def _engine() -> Engine:
+    if engine is None:  # pragma: no cover - only before startup completes
+        raise HTTPException(status_code=503, detail="starting up")
+    return engine
+
+
+# ---------------------------------------------------------------- endpoints
 
 @app.get("/health")
 def health() -> Dict[str, object]:
+    e = _engine()
     return {
         "ok": True,
-        "uptime_s": round(time.time() - engine.started, 1),
+        "uptime_s": round(time.time() - e.started, 1),
+        "minute": e.minute,
+        "ticks": e.ticks,
+        "tick_errors": e.tick_errors,
         "tick_seconds": TICK_SECONDS,
-        "ticks": engine.ticks,
+        "auth": e.auth.mode,
+        "alerts": e.alerter.enabled,
     }
 
 
 @app.post("/ingest")
-def ingest(body: IngestIn) -> Dict[str, object]:
-    minute = body.minute if body.minute is not None else engine.minute
+async def ingest(body: IngestIn, request: Request) -> Dict[str, object]:
+    e = _engine()
+    try:
+        verify(e.auth, request.headers.get("authorization"),
+               request.headers.get("x-revenueguard-timestamp"),
+               request.headers.get("x-revenueguard-signature"),
+               await request.body())
+    except AuthError as exc:
+        raise HTTPException(status_code=401, detail=str(exc))
+
+    minute = body.minute if body.minute is not None else e.minute
     accepted = 0
     for o in body.outcomes:
         outcome = PaymentOutcome(gateway=o.gateway, method=o.method,
@@ -136,22 +227,23 @@ def ingest(body: IngestIn) -> Dict[str, object]:
             outcome.validate()
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc))
-        if engine.source.push(outcome, minute):
+        if e.source.push(outcome, minute):
             accepted += 1
 
     return {
         "accepted": accepted,
         "rejected_late": len(body.outcomes) - accepted,
         "minute": minute,
-        "current_minute": engine.minute,
-        "buffered_minutes": engine.source.buffered_minutes,
+        "current_minute": e.minute,
+        "buffered_minutes": e.source.buffered_minutes,
     }
 
 
 @app.get("/routing")
 def routing() -> Dict[str, object]:
     """Recommended weights. Applying them is the caller's decision."""
-    table = engine.plane.routing
+    e = _engine()
+    table = e.plane.routing
     diverted = {
         f"{m}|{i}": {
             "weights": {g: round(w, 4) for g, w in table.current[(m, i)].items()},
@@ -160,6 +252,7 @@ def routing() -> Dict[str, object]:
         for (m, i) in table.current if table.is_diverted(m, i)
     }
     return {
+        "minute": e.minute,
         "diverted": diverted,
         "diverted_keys": len(diverted),
         "note": ("Recommendations only. This service does not and cannot apply "
@@ -169,39 +262,70 @@ def routing() -> Dict[str, object]:
 
 @app.get("/state")
 def state() -> Dict[str, object]:
-    o = engine.outcome
+    e = _engine()
+    o = e.outcome
     return {
-        "minute": engine.minute,
-        "observations": len(o.observations),
+        "minute": e.minute,
+        "observations_in_memory": len(o.observations),
         "alarms": len(o.alarms),
         "actions": o.actions,
         "blocked": o.blocked,
         "escalated": o.escalated,
         "rollbacks": o.rollbacks,
         "restores": o.restores,
-        "audit_events": len(o.ledger),
-        "open_diversions": len(engine.plane.diversions),
+        "audit_events": e.store.max_audit_seq,
+        "open_diversions": len(e.plane.diversions),
+        "last_tick_ms": round(e.last_tick_ms, 2),
         "ingest": {
-            "accepted": engine.source.accepted,
-            "dropped_late": engine.source.dropped_late,
-            "buffered_minutes": engine.source.buffered_minutes,
+            "accepted": e.source.accepted,
+            "dropped_late": e.source.dropped_late,
+            "buffered_minutes": e.source.buffered_minutes,
         },
+        "alerts": e.alerter.stats(),
         "methods_known": METHODS,
     }
 
 
 @app.get("/audit")
 def audit(limit: int = 50, kind: Optional[str] = None) -> Dict[str, object]:
-    events = list(engine.outcome.ledger)
-    if kind:
-        events = [e for e in events if e.kind == kind]
-    tail = events[-max(1, min(limit, 500)):]
-    return {
-        "total": len(engine.outcome.ledger),
-        "returned": len(tail),
-        "events": [
-            {"seq": e.seq, "minute": e.minute, "kind": e.kind,
-             "subject": e.subject, "rule": e.rule, "summary": e.summary}
-            for e in tail
-        ],
-    }
+    """Served from the store, so it survives a restart."""
+    e = _engine()
+    events = e.store.audit_tail(limit=max(1, min(limit, 500)), kind=kind)
+    return {"total": e.store.max_audit_seq, "returned": len(events),
+            "events": events}
+
+
+@app.get("/metrics", response_class=PlainTextResponse)
+def metrics() -> str:
+    e = _engine()
+    o = e.outcome
+    a = e.alerter.stats()
+    rows = [
+        ("revenueguard_minute", "counter", "Control-plane minute counter.",
+         e.minute),
+        ("revenueguard_actions_total", "counter", "Routing actions taken.",
+         o.actions),
+        ("revenueguard_rollbacks_total", "counter", "Diversions reverted.",
+         o.rollbacks),
+        ("revenueguard_escalations_total", "counter",
+         "Decisions handed to a human.", o.escalated),
+        ("revenueguard_blocked_total", "counter",
+         "Proposals refused by policy.", o.blocked),
+        ("revenueguard_open_diversions", "gauge",
+         "Keys currently away from baseline.", len(e.plane.diversions)),
+        ("revenueguard_ingest_dropped_late_total", "counter",
+         "Outcomes posted for a minute already processed.",
+         e.source.dropped_late),
+        ("revenueguard_tick_errors_total", "counter", "Ticks that raised.",
+         e.tick_errors),
+        ("revenueguard_tick_duration_ms", "gauge",
+         "Duration of the last tick.", round(e.last_tick_ms, 2)),
+        ("revenueguard_alerts_failed_total", "counter",
+         "Webhook deliveries that failed.", a["failed"]),
+    ]
+    out = []
+    for name, kind, help_text, value in rows:
+        out.append(f"# HELP {name} {help_text}")
+        out.append(f"# TYPE {name} {kind}")
+        out.append(f"{name} {value}")
+    return "\n".join(out) + "\n"

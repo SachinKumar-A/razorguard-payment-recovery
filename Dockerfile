@@ -1,13 +1,14 @@
 # RevenueGuard - control plane service.
 #
-# Builds an image that runs the HTTP service. The benchmarks and the operator
-# console run from the same image; see DEPLOY.md for the commands.
+# The benchmarks, the console and the service all run from this image; see
+# DEPLOY.md for the commands.
 
-FROM python:3.11-slim AS base
+FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    REVENUEGUARD_STATE=/data/revenueguard.db
 
 WORKDIR /app
 
@@ -19,16 +20,21 @@ COPY revenueguard/ ./revenueguard/
 COPY app.py README.md ./
 COPY bench/results/ ./bench/results/
 
-# Run unprivileged. Nothing here needs root, and the service holds payment
-# aggregates even if it never holds individual records.
+# Unprivileged, and /data is a mount point: the state database must outlive the
+# container or persistence buys nothing.
 RUN useradd --create-home --uid 10001 revenueguard \
- && chown -R revenueguard:revenueguard /app
+ && mkdir -p /data \
+ && chown -R revenueguard:revenueguard /app /data
 USER revenueguard
+VOLUME ["/data"]
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD python -c "import urllib.request,sys; \
 sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status==200 else 1)"
 
-CMD ["uvicorn", "revenueguard.service:app", "--host", "0.0.0.0", "--port", "8000"]
+# One worker, deliberately. All control-plane state is in this process; two
+# workers would each see half the ingest stream and disagree about the fleet.
+CMD ["uvicorn", "revenueguard.service:app", \
+     "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
