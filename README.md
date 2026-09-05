@@ -355,6 +355,13 @@ forty seconds while both arms execute; the result is written to `.cache/` and
 every load after that is about a second. The Docker image ships with the
 default settings already warmed at build time.
 
+The header is modelled on an exchange front page, because that is the closest
+thing to what this console is: a live board whose headline numbers and
+navigation have to be readable from across a room. Four bands — a utility
+strip, the board itself with the paired-arm quotes, a wide primary navigation,
+and a tape running the eighteen incidents with what each put at risk and what
+came back.
+
 Ten pages, grouped into what the reader is doing — looking at the evidence,
 at the money, or at whether any of it can be trusted. **Every route lives in
 the URL**, including the simulation settings, so the KPI tiles are real links,
@@ -639,7 +646,8 @@ a test asserts it.
 logo is not reproduced anywhere in this repository.
 
 The console runs on a "light clinical" design system carried over from an
-earlier project of mine rather than on Razorpay's palette: paper ground,
+earlier project of mine, with an exchange-style header layered on top of it:
+paper ground,
 near-black ink, hairline rules, structure carried by typography and alignment
 rather than filled boxes — so the only saturated colour on screen is risk,
 and it always means the same thing. One accent, reserved for interaction and

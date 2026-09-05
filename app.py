@@ -102,7 +102,7 @@ CSS_TOKENS = """
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 
 #MainMenu, footer, header {visibility:hidden;}
-.block-container {padding-top:1.4rem; padding-bottom:4rem; max-width:1460px;}
+.block-container {padding:0 1.5rem 4rem; max-width:1560px;}
 
 :root {
   /* grounds, lightest first */
@@ -138,6 +138,9 @@ CSS_TOKENS = """
   --low-t:     #ecfdf5;
   --info-t:    #eff6ff;
 
+  --chrome: #3b3a7c;
+  --chrome2:#2f2e66;
+
   --r:      6px;
   --r-sm:   4px;
   --mono:   "JetBrains Mono", ui-monospace, monospace;
@@ -154,86 +157,156 @@ body, .stApp {background:var(--paper); color:var(--body);
 .tnum,.score b,.fcell .n,.sb .sbv{font-variant-numeric:tabular-nums}
 a{text-decoration:none; color:inherit}
 
-/* ---------- masthead ---------- */
-.mast {border-bottom:1px solid var(--rule); padding-bottom:1.2rem;
-  margin-bottom:1.2rem; display:flex; gap:2rem; align-items:flex-start;}
-.mast .ml{flex:1; min-width:0}
-.mast .eyebrow {display:flex; align-items:center; gap:.45rem; font-size:.68rem;
-  letter-spacing:.14em; color:var(--accent); text-transform:uppercase;
-  font-weight:600; margin-bottom:.6rem;}
-.mast .eyebrow svg{width:13px; height:13px; stroke:var(--accent)}
-.mast h1 {font-size:2.2rem; font-weight:700; margin:0 0 .35rem 0;
-  line-height:1.1; letter-spacing:-.025em; color:var(--ink);}
-.mast img{height:48px; display:block; margin:0 0 .5rem -2px}
-.mast .sub {color:var(--body); font-size:.9rem; max-width:76ch; line-height:1.6;}
-.mast .sub b{color:var(--ink); font-weight:600}
-.mast-r{flex:none; text-align:right; font-size:.76rem; color:var(--muted);
-  line-height:1.95; border-left:1px solid var(--rule); padding-left:1.5rem;}
-.mast-r b{color:var(--ink); font-variant-numeric:tabular-nums; font-weight:600}
-
-/* ---------- context chips ---------- */
-.chips {margin:.95rem 0 0 0; display:flex; flex-wrap:wrap; gap:.35rem;}
-.chip {display:inline-flex; align-items:center; gap:.38rem;
-  border:1px solid var(--rule); border-radius:var(--r-sm);
-  padding:.26rem .55rem; font-size:.73rem; color:var(--body);
-  background:var(--paper); transition:border-color .15s ease;}
-.chip svg{width:12px; height:12px; stroke:var(--faint); flex:none}
-.chip b{color:var(--ink); font-weight:600}
-.chip.hot {border-color:#bfdbfe; color:var(--accent); background:var(--tint)}
-.chip.hot svg{stroke:var(--accent)}
-.chip.good{border-color:#a7f3d0; color:var(--low); background:var(--low-t)}
-.chip.good svg{stroke:var(--low)}
 """
 
 CSS_NAV = """
-/* ---------- KPI tiles -----------------------------------------------------
-   Each tile is a link to the page that explains it, so the top row is the
-   fastest route into the detail rather than a set of numbers you then have to
-   go and find. The arrow is the affordance; the hairline does the rest.     */
-.funnel {display:grid; grid-template-columns:repeat(5,1fr); gap:0;
-  margin:1.2rem 0 .4rem 0; border:1px solid var(--rule); border-radius:var(--r);
-  overflow:hidden; background:var(--paper);}
-.fcell {padding:.9rem 1.05rem 1rem; position:relative; display:block;
-  border-left:1px solid var(--rule); transition:background-color .15s ease;}
-.fcell:first-child{border-left:none}
+/* ---------- exchange chrome -----------------------------------------------
+   The header is modelled on an exchange front page, because that is the
+   closest thing to what this console is: a live board where a handful of
+   headline numbers, a tape and a wide primary navigation have to be readable
+   from across a room. Four stacked bands, each edge to edge within the main
+   column: a utility strip, the board itself, the navigation, then the tape. */
+.bleed{margin-left:-1.5rem; margin-right:-1.5rem; padding-left:1.5rem;
+  padding-right:1.5rem;}
+
+/* band 1 - utility strip */
+.topbar{background:var(--chrome); color:#c9c7ec; font-size:.76rem;
+  display:flex; align-items:center; gap:.1rem; flex-wrap:wrap;
+  padding-top:.3rem; padding-bottom:.3rem;}
+.topbar a{color:#dedcf5; padding:.32rem .62rem; border-radius:3px;
+  font-weight:500; transition:background-color .15s ease, color .15s ease;}
+.topbar a:hover{background:rgba(255,255,255,.13); color:#fff}
+.topbar .sep{width:1px; height:14px; background:rgba(255,255,255,.22);
+  margin:0 .3rem}
+.topbar .sp{flex:1}
+.topbar .meta{color:#a9a6d8; padding:.32rem .5rem;
+  font-variant-numeric:tabular-nums}
+.topbar .meta b{color:#fff; font-weight:600}
+.topbar .cta{background:var(--accent); color:#fff; font-weight:600;
+  display:inline-flex; align-items:center; gap:.35rem}
+.topbar .cta:hover{background:#1b45c4; color:#fff}
+.topbar .cta svg{width:13px; height:13px}
+
+/* band 2 - the board */
+.board{background:var(--paper); border-bottom:1px solid var(--rule);
+  display:flex; align-items:center; gap:1.3rem; flex-wrap:wrap;
+  padding-top:.85rem; padding-bottom:.85rem;}
+.board img{height:44px; display:block}
+.board .tag{font-size:.75rem; color:var(--muted); line-height:1.55;
+  max-width:38ch; border-left:1px solid var(--rule); padding-left:1.1rem;}
+.board .tag b{color:var(--ink); font-weight:600}
+.board .sp{flex:1; min-width:.5rem}
+.quotes{display:flex; align-items:stretch; flex-wrap:wrap}
+.q{padding:0 1.05rem; border-left:1px solid var(--rule); min-width:8.4rem}
+.q:first-child{border-left:none}
+.q .qk{font-size:.6rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--faint); font-weight:600; margin-bottom:.2rem}
+.q .qv{font-size:1.2rem; font-weight:700; color:var(--ink); line-height:1.15;
+  font-variant-numeric:tabular-nums; display:flex; align-items:center; gap:.3rem}
+.q .qv svg{width:12px; height:12px}
+.q.up .qv{color:var(--low)} .q.down .qv{color:var(--critical)}
+.q .qd{font-size:.71rem; color:var(--muted); margin-top:.2rem;
+  font-variant-numeric:tabular-nums}
+.q .qd b{color:var(--ink); font-weight:600}
+.live{display:inline-flex; align-items:center; gap:.35rem; font-size:.67rem;
+  color:var(--low); font-weight:600; margin-top:.28rem}
+.live .dot{width:7px; height:7px; border-radius:50%; background:var(--low);
+  animation:pulseDot 2.2s ease-in-out infinite}
+@keyframes pulseDot{0%,100%{opacity:1} 50%{opacity:.25}}
+
+/* band 3 - primary navigation, deliberately large */
+.mainnav{background:var(--paper); border-bottom:2px solid var(--rule);
+  position:sticky; top:0; z-index:50; display:flex; align-items:stretch;
+  flex-wrap:wrap; overflow-x:auto; scrollbar-width:none;}
+.mainnav::-webkit-scrollbar{display:none}
+.mainnav a{display:inline-flex; align-items:center; gap:.45rem;
+  padding:.95rem .9rem; font-size:.83rem; font-weight:600;
+  letter-spacing:.045em; text-transform:uppercase; color:var(--body);
+  white-space:nowrap; position:relative;
+  transition:color .15s ease, background-color .15s ease;}
+.mainnav a:hover{color:var(--chrome); background:var(--sunk)}
+.mainnav a::after{content:""; position:absolute; left:50%; right:50%;
+  bottom:-2px; height:3px; background:var(--accent);
+  transition:left .2s ease, right .2s ease}
+.mainnav a.on{color:var(--accent)}
+.mainnav a.on::after{left:.65rem; right:.65rem}
+.mainnav .ct{font-variant-numeric:tabular-nums; border-radius:99px;
+  padding:0 .4rem; font-size:.66rem; line-height:17px; font-weight:700;
+  background:var(--wash); color:var(--muted); letter-spacing:0}
+.mainnav a.on .ct{background:var(--accent); color:#fff}
+.mainnav a.warn .ct{background:var(--high-t); color:var(--high)}
+.mainnav .gsep{width:1px; align-self:center; height:20px;
+  background:var(--rule); margin:0 .4rem}
+
+/* band 4 - the tape */
+.tape{background:var(--sunk); border-bottom:1px solid var(--rule);
+  overflow:hidden; margin-bottom:1.1rem; position:relative;}
+.tape-in{display:flex; width:max-content; animation:tape 70s linear infinite}
+.tape:hover .tape-in{animation-play-state:paused}
+@keyframes tape{from{transform:translateX(0)} to{transform:translateX(-50%)}}
+.tk{display:inline-flex; align-items:baseline; gap:.5rem; padding:.42rem .9rem;
+  font-size:.78rem; border-left:3px solid var(--rule2); white-space:nowrap;
+  margin:.45rem 0; color:var(--muted);}
+.tk.up{border-left-color:var(--low)} .tk.down{border-left-color:var(--critical)}
+.tk b{color:var(--ink); font-weight:700; font-family:var(--mono);
+  font-size:.75rem; letter-spacing:-.02em}
+.tk .v{color:var(--body); font-variant-numeric:tabular-nums}
+.tk .c{font-variant-numeric:tabular-nums; font-weight:600}
+.tk.up .c{color:var(--low)} .tk.down .c{color:var(--critical)}
+.tape-tag{position:absolute; left:0; top:0; bottom:0; z-index:2;
+  background:var(--chrome); color:#fff; font-size:.61rem; font-weight:700;
+  letter-spacing:.13em; display:flex; align-items:center;
+  padding:0 .85rem 0 1.5rem;}
+.tape-fade{position:absolute; right:0; top:0; bottom:0; width:56px; z-index:2;
+  background:linear-gradient(90deg,rgba(250,250,250,0),var(--sunk))}
+
+/* ---------- KPI board -----------------------------------------------------
+   Corner-folded tiles, an exchange convention: the fold and the underline
+   carry the semantic colour so the row reads from across a room, and the
+   whole tile is a link to the page that explains it.                      */
+.funnel {display:grid; grid-template-columns:repeat(5,1fr); gap:.7rem;
+  margin:0 0 .3rem 0;}
+.fcell {display:block; position:relative; background:var(--paper);
+  border:1px solid var(--rule); border-radius:var(--r); overflow:hidden;
+  padding:.8rem 1rem .9rem; border-bottom:3px solid var(--rule2);
+  transition:border-bottom-color .15s ease, background-color .15s ease;}
+.fcell::after{content:""; position:absolute; top:0; right:0;
+  border-width:0 15px 15px 0; border-style:solid;
+  border-color:var(--rule2) transparent;}
 .fcell:hover{background:var(--sunk)}
-.fcell .kh{display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:.6rem; color:var(--faint)}
-.fcell .kh svg{width:14px; height:14px}
-.fcell .go{opacity:0; transition:opacity .15s ease, transform .15s ease;
-  transform:translateX(-3px)}
-.fcell:hover .go{opacity:1; transform:none; color:var(--accent)}
-.fcell .n {font-size:1.75rem; font-weight:700; line-height:1;
+.fcell .kh{display:flex; align-items:center; gap:.38rem; margin-bottom:.5rem;
+  color:var(--faint); font-size:.69rem; font-weight:600; letter-spacing:.03em}
+.fcell .kh svg{width:14px; height:14px; flex:none}
+.fcell .n {font-size:1.72rem; font-weight:700; line-height:1;
   letter-spacing:-.03em; font-variant-numeric:tabular-nums; color:var(--ink);}
-.fcell .k {font-size:.7rem; letter-spacing:.02em; color:var(--muted);
-  margin-top:.4rem; font-weight:500;}
-.fcell.low      .n{color:var(--low)}      .fcell.low      .kh svg{stroke:var(--low)}
-.fcell.critical .n{color:var(--critical)} .fcell.critical .kh svg{stroke:var(--critical)}
-.fcell.high     .n{color:var(--high)}     .fcell.high     .kh svg{stroke:var(--high)}
+.fcell .k {font-size:.72rem; color:var(--muted); margin-top:.42rem;
+  font-weight:500; display:flex; align-items:center; gap:.3rem}
+.fcell .k svg{width:12px; height:12px; opacity:0; transform:translateX(-3px);
+  transition:opacity .15s ease, transform .15s ease}
+.fcell:hover .k svg{opacity:1; transform:none; color:var(--accent)}
+.fcell.low     {border-bottom-color:var(--low)}
+.fcell.low::after{border-color:var(--low) transparent}
+.fcell.low .n{color:var(--low)} .fcell.low .kh{color:var(--low)}
+.fcell.high    {border-bottom-color:var(--high)}
+.fcell.high::after{border-color:var(--high) transparent}
+.fcell.high .n{color:var(--high)} .fcell.high .kh{color:var(--high)}
+.fcell.critical{border-bottom-color:var(--critical)}
+.fcell.critical::after{border-color:var(--critical) transparent}
+.fcell.critical .n{color:var(--critical)} .fcell.critical .kh{color:var(--critical)}
+.fcell.chrome  {border-bottom-color:var(--chrome)}
+.fcell.chrome::after{border-color:var(--chrome) transparent}
+.fcell.chrome .kh{color:var(--chrome)}
 
-/* ---------- navigation ----------------------------------------------------
-   Real links, grouped by what the reader is doing - looking at the evidence,
-   at the money, or at whether any of it can be trusted. Dividers mark the
-   three stages; a live count means a label arrives with its size attached.  */
-.nav {position:sticky; top:0; z-index:40; background:var(--paper);
-  border-bottom:1px solid var(--rule); margin:1.2rem 0 1.3rem;
-  display:flex; align-items:center; gap:.15rem; flex-wrap:wrap;
-  padding:.3rem 0;}
-.nav .div {width:1px; height:22px; background:var(--rule); margin:0 .55rem;}
-.nav a {display:inline-flex; align-items:center; gap:.4rem; white-space:nowrap;
-  padding:.5rem .7rem; border-radius:5px; font-size:.83rem; font-weight:500;
-  color:var(--muted); transition:color .15s ease, background-color .15s ease;}
-.nav a:hover {color:var(--ink); background:var(--sunk)}
-.nav a.on {color:var(--ink); font-weight:600; background:var(--wash)}
-.nav .ct {font-variant-numeric:tabular-nums; border-radius:99px;
-  padding:0 .38rem; font-size:.66rem; line-height:16px; font-weight:600;
-  background:var(--wash); color:var(--muted);}
-.nav a.on .ct {background:var(--ink); color:var(--paper)}
-.nav a.hot .ct {background:var(--critical-t); color:var(--critical)}
-.nav .sp{flex:1}
-.nav .blurb{font-size:.74rem; color:var(--faint); padding-right:.2rem}
-
-/* ---------- section labels ---------- */
+/* ---------- page headers and section labels ---------- */
+.pagehead{display:flex; align-items:baseline; gap:.85rem; flex-wrap:wrap;
+  border-bottom:1px solid var(--rule); padding-bottom:.55rem;
+  margin:.2rem 0 1rem}
+.pagehead h2{font-size:1.32rem; font-weight:700; color:var(--ink); margin:0;
+  letter-spacing:-.022em}
+.pagehead .ph-sub{font-size:.8rem; color:var(--muted)}
+.pagehead .ph-sp{flex:1}
+.pagehead .ph-as{font-size:.71rem; color:var(--faint);
+  font-variant-numeric:tabular-nums}
 .sect{display:flex; align-items:center; gap:.45rem; font-size:.68rem;
   letter-spacing:.13em; text-transform:uppercase; color:var(--muted);
   font-weight:600; margin:1.5rem 0 .6rem 0;}
@@ -423,6 +496,52 @@ CSS_DETAIL = """
 """
 
 CSS_CHROME = """
+/* ---------- data tables ---------------------------------------------------
+   The exchange treatment: a solid header band, zebra rows, right-aligned
+   figures on tabular numerals so columns of money line up on the decimal.
+   Rendered as HTML rather than through st.dataframe, which draws to a canvas
+   and cannot be themed to match anything.                                 */
+.tblwrap{border:1px solid var(--rule); border-radius:var(--r);
+  overflow:hidden; margin-bottom:.7rem}
+.tblscroll{overflow-x:auto}
+.tbl{width:100%; border-collapse:collapse; font-size:.79rem}
+.tbl thead th{background:var(--chrome); color:#fff; font-size:.64rem;
+  letter-spacing:.09em; text-transform:uppercase; font-weight:700;
+  padding:.58rem .8rem; text-align:left; white-space:nowrap;
+  position:sticky; top:0}
+.tbl thead th.num{text-align:right}
+.tbl tbody td{padding:.46rem .8rem; border-top:1px solid var(--rule);
+  color:var(--body); vertical-align:top}
+.tbl tbody tr:nth-child(even){background:var(--sunk)}
+.tbl tbody tr:hover{background:var(--tint)}
+.tbl td.num{text-align:right; font-variant-numeric:tabular-nums;
+  white-space:nowrap}
+.tbl td.mono{font-family:var(--mono); font-size:.94em; white-space:nowrap;
+  color:var(--ink)}
+.tbl td.wide{min-width:24rem; color:var(--ink)}
+.tbl .kd{font-size:.63rem; font-weight:700; letter-spacing:.07em;
+  text-transform:uppercase; padding:.1rem .4rem; border-radius:3px;
+  border:1px solid; white-space:nowrap}
+.kd.action{color:var(--low); background:var(--low-t); border-color:#a7f3d0}
+.kd.rollback{color:var(--critical); background:var(--critical-t);
+  border-color:#fecaca}
+.kd.detection{color:var(--medium); background:var(--medium-t);
+  border-color:#fde68a}
+.kd.decision{color:var(--info); background:var(--info-t); border-color:#bfdbfe}
+.kd.proposal,.kd.restore{color:var(--muted); background:var(--wash);
+  border-color:var(--rule)}
+.kd.critical{color:var(--critical); background:var(--critical-t);
+  border-color:#fecaca}
+.kd.high{color:var(--high); background:var(--high-t); border-color:#fed7aa}
+.kd.low{color:var(--low); background:var(--low-t); border-color:#a7f3d0}
+.tbl .rulechip{font-family:var(--mono); font-size:.9em; color:var(--muted)}
+.tbl .rulechip.bad{color:var(--critical); font-weight:600}
+.tbl a{color:var(--accent); font-weight:600}
+.tbl a:hover{text-decoration:underline}
+.pager{display:flex; align-items:center; gap:.6rem; font-size:.76rem;
+  color:var(--muted); margin:.1rem 0 1rem}
+.pager b{color:var(--ink); font-variant-numeric:tabular-nums}
+
 /* ---------- scoreboard ---------- */
 .sb {border:1px solid var(--rule); border-radius:var(--r); padding:.8rem .95rem;
   margin-bottom:.6rem; background:var(--paper);}
@@ -491,6 +610,11 @@ div[data-testid="stDataFrame"]{border:1px solid var(--rule);
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{transition-duration:.01ms!important;
     animation-duration:.01ms!important}
+  /* Collapsing the duration would make the tape and the live dot flicker
+     rather than stop, which is worse than the motion was. Both are decoration
+     over information that is also on the page, so they simply hold still. */
+  .tape-in{animation:none!important; transform:none!important}
+  .live .dot{animation:none!important; opacity:1!important}
 }
 
 /* ---------- responsive ---------- */
@@ -645,17 +769,14 @@ def hhmm(m: int) -> str:
     return f"d{m // 1440 + 1} {(m // 60) % 24:02d}:{m % 60:02d}"
 
 
-def fcell(ic: str, value: str, label: str, view: str, tone: str = "") -> str:
+def fcell(ic: str, value: str, label: str, view: str, tone: str = "",
+          head: str = "") -> str:
     """A KPI tile. It is a link, because a number you cannot click is a number
     you then have to go and look for."""
     return (f'<a class="fcell {tone}" href="{link(view)}" target="_self">'
-            f'<div class="kh">{icon(ic)}<span class="go">{icon("arrow")}</span>'
-            f'</div><div class="n">{value}</div>'
-            f'<div class="k">{label}</div></a>')
-
-
-def chip(ic: str, text: str, tone: str = "") -> str:
-    return f'<span class="chip {tone}">{icon(ic)}{text}</span>'
+            f'<div class="kh">{icon(ic)}{esc(head)}</div>'
+            f'<div class="n">{value}</div>'
+            f'<div class="k">{esc(label)}{icon("arrow")}</div></a>')
 
 
 def rail_row(k: str, v: str, tone: str = "") -> str:
@@ -830,73 +951,137 @@ st.sidebar.markdown(
     'past decision, and advises on escalations \u2014 and can change none of '
     'them.</div>', unsafe_allow_html=True)
 
-# ------------------------------------------------------------------ masthead
-
-st.markdown(
-    '<div class="mast"><div class="ml">'
-    f'<div class="eyebrow">{icon("shield")}Razorpay AI Buildathon &middot; '
-    f'Track 03 &middot; AI Revenue Recovery</div>'
-    + (f'<img src="data:image/svg+xml;base64,{b64(LOGO)}">' if LOGO.exists()
-       else '<h1>RazorGuard</h1>')
-    + '<div class="sub">Payment degradation caught at the slice a dashboard '
-      'cannot see, routed around under written bounds, and the recovery '
-      '<b>measured against a control arm rather than projected</b>. Every '
-      'figure on this page is a difference between two runs that faced '
-      'identical demand.</div>'
-      '<div class="chips">'
-    + chip("database", f'<b>{control["attempts"]:,}</b> payment attempts')
-    + chip("layers", f'<b>{len(inc)}</b> injected incidents')
-    + chip("alert", f'<b>{treat["alarms"]}</b> alarms raised')
-    + chip("lock", f'<b>{treat["audit_events"]:,}</b> audit events')
-    + chip("clock", f'seed <b>{S["seed"]}</b> &middot; '
-                    f'<b>{S["days"]}</b> day(s)', "hot")
-    + chip("check", "arms identical" if valid else "arms diverged",
-           "good" if valid else "")
-    + (chip("sliders", f'<b>{len(NON_DEFAULT)}</b> setting(s) changed', "hot")
-       if NON_DEFAULT else "")
-    + '</div></div>'
-      '<div class="mast-r">'
-      f'success rate, router off <b>{ctrl_sr:.2%}</b><br>'
-      f'success rate, router on <b>{treat_sr:.2%}</b><br>'
-      f'gain <b>+{(treat_sr - ctrl_sr) * 100:.2f}pp</b><br>'
-      f'money at risk <b>{rupees(control["exposure"])}</b><br>'
-      f'recovered <b>{d_rev / control["exposure"]:.1%}</b> of it'
-      '</div></div>', unsafe_allow_html=True)
+# ============================================================================
+# THE HEADER
+# Four bands, rendered in one call so they stack without Streamlit's element
+# gap between them: a utility strip, the board, the primary navigation, and a
+# tape. The model is an exchange front page, because that is what this console
+# is - a live board whose headline numbers and navigation have to be readable
+# from across a room, not a settings panel with a chart under it.
+# ============================================================================
 
 if not valid:
     st.error("The two arms did not face identical demand. No recovery figure "
              "can be reported from this comparison.")
     st.stop()
 
+_gain_pp = (treat_sr - ctrl_sr) * 100
+_share = d_rev / control["exposure"]
+
+# --------------------------------------------------------------- band 1
+_util = [f'<a href="{link("overview")}" target="_self">Overview</a>',
+         f'<a href="{link("decisions")}" target="_self">Decision record</a>',
+         f'<a href="{link("refused")}" target="_self">What it refused</a>',
+         f'<a href="{link("audit")}" target="_self">Audit ledger</a>',
+         f'<a href="{link("method")}" target="_self">How it was measured</a>',
+         '<span class="sp"></span>',
+         f'<span class="meta"><b>{control["attempts"]:,}</b> attempts '
+         f'&middot; <b>{len(inc)}</b> incidents '
+         f'&middot; <b>{treat["alarms"]}</b> alarms '
+         f'&middot; <b>{treat["audit_events"]:,}</b> audit events</span>',
+         '<span class="sep"></span>',
+         f'<span class="meta">seed <b>{S["seed"]}</b> &middot; '
+         f'<b>{S["days"]}</b> day(s)'
+         + (f' &middot; <b>{len(NON_DEFAULT)}</b> changed' if NON_DEFAULT else "")
+         + '</span>',
+         f'<a class="cta" href="{link("settings")}" target="_self">'
+         f'{icon("sliders")}Settings</a>']
+
+# --------------------------------------------------------------- band 2
+_up = icon("trending")
+_quotes = (
+    f'<div class="q up"><div class="qk">Success rate &middot; router on</div>'
+    f'<div class="qv">{_up}{treat_sr:.2%}</div>'
+    f'<div class="qd">+{_gain_pp:.2f}pp vs <b>{ctrl_sr:.2%}</b> off</div>'
+    f'<div class="live"><span class="dot"></span>PAIRED CONTROL ARM</div></div>'
+
+    f'<div class="q"><div class="qk">Money at risk</div>'
+    f'<div class="qv">{rupees(control["exposure"])}</div>'
+    f'<div class="qd">lost by the control arm</div></div>'
+
+    f'<div class="q up"><div class="qk">Recovered, net</div>'
+    f'<div class="qv">{rupees(net.net_inr)}</div>'
+    f'<div class="qd"><b>{_share:.1%}</b> of what was at risk</div></div>'
+
+    f'<div class="q"><div class="qk">Payments saved</div>'
+    f'<div class="qv">{d_succ:,}</div>'
+    f'<div class="qd">of <b>{control["attempts"]:,}</b> attempts</div></div>')
+
+_board = (
+    '<div class="board bleed">'
+    + (f'<img src="data:image/svg+xml;base64,{b64(LOGO)}">' if LOGO.exists()
+       else '<h1 style="margin:0">RazorGuard</h1>')
+    + '<div class="tag">Degradation caught at the slice a dashboard cannot '
+      'see, routed around under written bounds, and the recovery <b>measured '
+      'against a control arm rather than projected</b>.</div>'
+      '<div class="sp"></div>'
+      f'<div class="quotes">{_quotes}</div></div>')
+
+# --------------------------------------------------------------- band 3
+_nav = []
+for _gi, _group in enumerate(GROUPS):
+    if _gi:
+        _nav.append('<span class="gsep"></span>')
+    for _vid, _label, _grp, _ck, _blurb in NAV:
+        if _grp != _group:
+            continue
+        _n = COUNTS.get(_ck)
+        _badge = f'<span class="ct">{_n:,}</span>' if _n is not None else ""
+        _cls = "on" if _vid == VIEW else ("warn" if _vid == "refused" else "")
+        _nav.append(f'<a class="{_cls}" href="{link(_vid)}" target="_self" '
+                    f'title="{esc(_blurb)}">{esc(_label)}{_badge}</a>')
+
+# --------------------------------------------------------------- band 4
+# The tape is the eighteen incidents, worst first, each showing what it put at
+# risk and what came back. Built from the two arms directly rather than from
+# the card analysis, which is not computed until further down the page.
+_tape = []
+for _r in inc.sort_values("start").itertuples():
+    _c = ctl_inc.loc[_r.id]
+    _pre = (_c["coh_pre_suc"] / _c["coh_pre_att"]) if _c["coh_pre_att"] else 0.0
+    _tick = (_c["coh_pre_rev"] / _c["coh_pre_suc"]) if _c["coh_pre_suc"] else 0.0
+    _risk = max(0.0, _pre * _c["coh_att"] - _c["coh_suc"]) * _tick
+    _got = _r.coh_rev - _c["coh_rev"]
+    _pct = (_got / _risk) if _risk > 0 else 0.0
+    _dir = "up" if _got > 0 else ("down" if _got < 0 else "")
+    _tape.append(
+        f'<span class="tk {_dir}"><b>{esc(_r.id)}</b>'
+        f'<span class="v">{rupees(_risk)} at risk</span>'
+        f'<span class="c">{"+" if _got > 0 else ""}{rupees(_got)}'
+        f' ({_pct:+.0%})</span></span>')
+# Duplicated so the marquee wraps without a visible seam.
+_tape_html = ('<div class="tape bleed"><div class="tape-tag">INCIDENTS</div>'
+              '<div class="tape-in">' + "".join(_tape) * 2
+              + '</div><div class="tape-fade"></div></div>')
+
+st.markdown(
+    '<div class="topbar bleed">' + "".join(_util) + '</div>'
+    + _board
+    + '<div class="mainnav bleed">' + "".join(_nav) + '</div>'
+    + _tape_html, unsafe_allow_html=True)
+
 st.markdown(
     '<div class="funnel">'
     + fcell("coin", rupees(net.net_inr), "Recovered, net of fees",
-            "recovery", "low")
-    + fcell("trending", f"{d_succ:,}", "Payments saved", "recovery", "low")
-    + fcell("route", f'{treat["actions"]:,}', "Routing actions taken", "actions")
-    + fcell("ban", f"{REFUSED_TOTAL:,}", "Refused by policy", "refused", "high")
+            "recovery", "low", "Recovery")
+    + fcell("trending", f"{d_succ:,}", "Payments saved", "recovery", "low",
+            "Payments")
+    + fcell("route", f'{treat["actions"]:,}', "Routing actions taken",
+            "actions", "chrome", "Actions")
+    + fcell("ban", f"{REFUSED_TOTAL:,}", "Refused by policy", "refused",
+            "high", "Refusals")
     + fcell("undo", f'{treat["rollbacks"]:,}', "Undone by the system",
-            "rollbacks", "critical")
+            "rollbacks", "critical", "Rollbacks")
     + '</div>', unsafe_allow_html=True)
 
-# ---------------------------------------------------------------- navigation
-
-_items = []
-for gi, group in enumerate(GROUPS):
-    if gi:
-        _items.append('<span class="div"></span>')
-    for vid, label, grp, count_key, _blurb in NAV:
-        if grp != group:
-            continue
-        n = COUNTS.get(count_key)
-        badge = (f'<span class="ct">{n:,}</span>' if n is not None else "")
-        cls = "on" if vid == VIEW else ("hot" if vid == "refused" else "")
-        _items.append(f'<a class="{cls}" href="{link(vid)}" target="_self" '
-                      f'title="{esc(_blurb)}">{esc(label)}{badge}</a>')
-_items.append('<span class="sp"></span>')
-_items.append(f'<span class="blurb">{esc(BLURB[VIEW])}</span>')
-st.markdown('<div class="nav">' + "".join(_items) + '</div>',
-            unsafe_allow_html=True)
+_PAGE = next(n for n in NAV if n[0] == VIEW)
+st.markdown(
+    f'<div class="pagehead"><h2>{esc(_PAGE[1])}</h2>'
+    f'<span class="ph-sub">{esc(_PAGE[4])}</span>'
+    f'<span class="ph-sp"></span>'
+    f'<span class="ph-as">seed {S["seed"]} &middot; {S["days"]} simulated '
+    f'day(s) &middot; {S["txn_per_min"]:,.0f} payments/min</span></div>',
+    unsafe_allow_html=True)
 
 
 # ============================================================================
@@ -1220,6 +1405,22 @@ for _, _row in inc.iterrows():
 order = sorted(range(len(analyses)), key=lambda k: -analyses[k]["at_risk"])
 
 
+def table(headers, rows) -> str:
+    """An HTML data table in the exchange treatment.
+
+    `headers` is a list of (label, css class) and every row is a list of
+    already-escaped cells. Rendered as HTML rather than through st.dataframe,
+    which draws to a canvas and cannot be themed to match the rest of the page.
+    """
+    head = "".join(f'<th class="{c}">{esc(h)}</th>' for h, c in headers)
+    body = "".join("<tr>" + "".join(
+        f'<td class="{c}">{v}</td>' for v, (_h, c) in zip(r, headers)) + "</tr>"
+        for r in rows)
+    return (f'<div class="tblwrap"><div class="tblscroll"><table class="tbl">'
+            f'<thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
+            f'</div></div>')
+
+
 def ledger_rows(frame, limit=80):
     out = []
     for r in frame.head(limit).itertuples():
@@ -1428,7 +1629,51 @@ elif VIEW == "decisions":
         f'overlap too, so these figures sum to slightly more than the run '
         f'total; the run total is the one that carries a confidence interval.',
         "", "Read the top card first"), unsafe_allow_html=True)
-    st.markdown("<div style='height:.9rem'></div>", unsafe_allow_html=True)
+
+    # The board first, then the cards. A reader who wants the shape of the run
+    # gets it in one screen; a reader who wants the reasoning scrolls.
+    st.markdown(f'<div class="sect">{icon("layers")}All {len(order)} incidents,'
+                f' worst first</div>', unsafe_allow_html=True)
+    _rows = []
+    for i, k in enumerate(order, 1):
+        r, a = inc.iloc[k], analyses[k]
+        cls, sev = band_of(a)
+        oc, label = outcome_of(a, r["kind"])
+        _rows.append([
+            f'{i}',
+            f'<a href="{link("replay", )}&inc={esc(r["id"])}" target="_self">'
+            f'{esc(r["id"])}</a>',
+            f'<span class="kd {"decision" if cls == "info" else cls}">{sev}</span>',
+            esc(r["label"]),
+            f'{hhmm(int(r["start"]))} · {r["duration"]}m',
+            f'{r["slices"]}',
+            rupees(a["at_risk"]),
+            (f'<span style="color:var(--low);font-weight:600">'
+             f'+{rupees(a["recovered"])}</span>' if a["recovered"] > 0 else
+             f'<span style="color:var(--critical)">{rupees(a["recovered"])}'
+             f'</span>' if a["recovered"] < 0 else
+             '<span style="color:var(--faint)">—</span>'),
+            f'{a["capture"]:.0%}',
+            # A detection at or before the injected start minute is not a
+            # zero-minute detection, it is a sub-minute one; printing "0m"
+            # reads as a missing value.
+            (('&lt;1m' if a["ttd"] <= 0 else f'{a["ttd"]}m')
+             if a["ttd"] is not None else
+             '<span style="color:var(--faint)">not raised</span>'),
+            f'<span class="kd {"decision" if oc == "info" else oc}">'
+            f'{label}</span>'])
+    st.markdown(table(
+        [("#", "num"), ("Incident", "mono"), ("Severity", ""), ("Kind", ""),
+         ("Window", "mono"), ("Routes", "num"), ("At risk", "num"),
+         ("Recovered", "num"), ("Capture", "num"), ("Caught in", "num"),
+         ("Outcome", "")], _rows), unsafe_allow_html=True)
+    st.markdown('<div class="hint">Severity is the share of the run’s own '
+                'losses this incident accounts for, not an absolute rupee '
+                'threshold. Click an incident id to replay its ledger.</div>',
+                unsafe_allow_html=True)
+
+    st.markdown(f'<div class="sect">{icon("shield")}The reasoning, card by '
+                f'card</div>', unsafe_allow_html=True)
     for i, k in enumerate(order, 1):
         render_incident(i, inc.iloc[k], analyses[k], hero=(i == 1))
 
@@ -1655,20 +1900,59 @@ elif VIEW == "rollbacks":
 
 
 elif VIEW == "audit":
-    kinds2 = st.multiselect(
+    st.markdown(
+        f'<div class="lede">Every event the control plane wrote, in the order '
+        f'it wrote them. Append-only and sequence-numbered: '
+        f'<b>{treat["audit_events"]:,}</b> entries covering every money '
+        f'movement, every refusal with the rule that decided it, and every '
+        f'rollback. Written as the run proceeded, not assembled '
+        f'afterwards.</div>', unsafe_allow_html=True)
+
+    f1, f2, f3 = st.columns([2, 1, 1])
+    kinds2 = f1.multiselect(
         "Event kinds", sorted(ledger["kind"].unique()),
         default=["detection", "action", "rollback"], key="audit_kinds")
+    needle = f2.text_input("Search subject or summary", "")
+    per = f3.selectbox("Rows per page", [50, 100, 250], index=0)
+
     v = ledger
     if kinds2:
         v = v[v["kind"].isin(kinds2)]
-    v = v.copy()
-    v["when"] = v["minute"].map(hhmm)
-    st.dataframe(v[["seq", "when", "kind", "subject", "rule", "summary"]],
-                 width="stretch", hide_index=True, height=470)
-    st.caption(f'{treat["audit_events"]:,} events in this run. Every money '
-               f'action and every refusal, with the rule that decided it. '
-               f'Append-only, sequence-numbered, and written as the run '
-               f'proceeded rather than assembled afterwards.')
+    if needle:
+        m = needle.lower()
+        v = v[v["subject"].str.lower().str.contains(m, regex=False)
+              | v["summary"].str.lower().str.contains(m, regex=False)
+              | v["rule"].str.lower().str.contains(m, regex=False)]
+
+    pages = max(1, (len(v) + per - 1) // per)
+    page = st.number_input("Page", 1, pages, 1, key="audit_page") if pages > 1 else 1
+    lo_i = (int(page) - 1) * per
+    chunk = v.iloc[lo_i:lo_i + per]
+
+    st.markdown(
+        f'<div class="pager">Showing <b>{lo_i + 1:,}</b>–'
+        f'<b>{min(lo_i + per, len(v)):,}</b> of <b>{len(v):,}</b> matching '
+        f'entries &middot; page <b>{int(page)}</b> of <b>{pages}</b></div>',
+        unsafe_allow_html=True)
+
+    if chunk.empty:
+        st.info("No events match this filter.")
+    else:
+        st.markdown(table(
+            [("Seq", "num"), ("When", "mono"), ("Kind", ""),
+             ("Subject", "mono"), ("Rule", "mono"), ("What happened", "wide")],
+            [[f"{r.seq}", hhmm(r.minute),
+              f'<span class="kd {r.kind}">{r.kind}</span>',
+              esc(r.subject),
+              (f'<span class="rulechip{" bad" if r.rule in LOUD else ""}">'
+               f'{esc(r.rule)}</span>' if r.rule else
+               '<span style="color:var(--faint)">—</span>'),
+              esc(r.summary)]
+             for r in chunk.itertuples()]), unsafe_allow_html=True)
+
+    st.download_button(
+        "Download the full ledger as CSV",
+        ledger.to_csv(index=False).encode(), "razorguard-ledger.csv", "text/csv")
 
 
 elif VIEW == "method":

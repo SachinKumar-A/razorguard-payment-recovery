@@ -314,6 +314,10 @@ def build(f: Facts):
         "both arms execute; the result is written to <font face='Courier' "
         "size='8.5'>.cache/</font> and every load after that is about a "
         "second. The Docker image ships with the defaults already warmed."))
+    A(P("The header is modelled on an exchange front page: a utility strip, "
+        "the board with the paired-arm quotes, a wide primary navigation, and "
+        "a tape running the eighteen incidents with what each put at risk and "
+        "what came back. Hover the tape to stop it."))
     A(P("Ten pages, grouped by what you are doing. Every route lives in the "
         "URL &mdash; including the simulation settings &mdash; so the tiles "
         "along the top are real links, a view can be sent to somebody as a "
@@ -327,7 +331,8 @@ def build(f: Facts):
         "the router on and off. Red bands are injected incidents; triangles "
         "are actions and rollbacks. Scroll to zoom into a single incident, "
         "drag to pan, hover for the values under the pointer.",
-        "<b>Decision record</b> &mdash; the eighteen incidents as ranked "
+        "<b>Decision record</b> &mdash; a board of all eighteen incidents "
+        "worst first, then the same eighteen as ranked "
         "cards, heaviest first, each carrying the decision path that produced "
         "it: what the drop was, how fast it was caught, how much money was at "
         "risk, which bounds were checked, what was done, and what it was "
@@ -345,7 +350,9 @@ def build(f: Facts):
         "The engine's 93 refusals are reconciled on the page against the 57 "
         "that named a rule, so the two counters cannot be mistaken for a "
         "contradiction.",
-        "<b>Audit ledger</b> &mdash; the full append-only record, filterable.",
+        "<b>Audit ledger</b> &mdash; the full append-only record as a "
+        "paged table, filterable by kind and searchable by subject, rule or "
+        "text, with a CSV download.",
         "<b>How it was measured</b> &mdash; the paired design, the guard that "
         "refuses to report when the arms diverge, and where the model is and "
         "is not.",
