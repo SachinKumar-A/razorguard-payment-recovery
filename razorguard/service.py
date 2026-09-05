@@ -41,6 +41,7 @@ from .advisor import Advisor, escalations_in
 from .alerts import Alerter, alerts_from_ledger
 from .applier import ChangeTracker, build_from_env, recommendations_from
 from .config import METHOD_TICKET, METHODS
+from .envfile import load as _load_env
 from .control_plane import HISTORY_MIN, ControlPlane, RunOutcome
 from .detectors import default_detector
 from .ingest import BufferedSource, PaymentOutcome
@@ -48,6 +49,9 @@ from .investigator import evidence_from_run
 from .persistence import Lease, Store, checkpoint
 from .policy import PolicyConfig, PolicyEngine
 from .security import AuthConfig, AuthError, verify
+
+# Before any os.environ.get below, so a .env is honoured.
+_load_env()
 
 TICK_SECONDS = float(os.environ.get("RAZORGUARD_TICK_SECONDS", "60"))
 STATE_PATH = os.environ.get("RAZORGUARD_STATE", "state/razorguard.db")

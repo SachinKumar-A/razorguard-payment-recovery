@@ -14,6 +14,7 @@ from typing import List
 
 from .config import METHOD_TICKET, WorldConfig
 from .control_plane import ControlPlane
+from .envfile import describe, load
 from .detectors import default_detector
 from .executor import (DryRunExecutor, ExecutionResult, RazorpayTestExecutor,
                        intents_from_ledger)
@@ -33,6 +34,11 @@ def main(argv=None) -> int:
                     help="also create a payment link per recovery")
     ap.add_argument("--json", type=str, default=None)
     args = ap.parse_args(argv)
+
+    # Before anything reads a credential, so a .env actually works.
+    applied = load()
+    if applied:
+        print(describe(applied))
 
     incidents = default_incident_plan(args.days)
     world = World(WorldConfig(seed=args.seed), incidents)

@@ -15,6 +15,7 @@ import sys
 from typing import List, Tuple
 
 from .config import GATEWAYS, ISSUERS, METHODS, WorldConfig
+from .envfile import load as _load_env
 from .control_plane import ControlPlane
 from .detectors import default_detector
 from .narrator import ClaudeNarrator, TemplateNarrator, describe
@@ -56,6 +57,7 @@ def main(argv=None) -> int:
     ap.add_argument("--claude", action="store_true",
                     help="also render with Claude, if a credential resolves")
     args = ap.parse_args(argv)
+    _load_env()
 
     template = TemplateNarrator()
     claude = ClaudeNarrator() if args.claude else None

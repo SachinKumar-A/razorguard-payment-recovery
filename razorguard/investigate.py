@@ -18,6 +18,7 @@ import sys
 from typing import List
 
 from .config import WorldConfig
+from .envfile import load as _load_env
 from .control_plane import ControlPlane
 from .detectors import default_detector
 from .investigator import Investigator, evidence_from_run
@@ -67,6 +68,7 @@ def main(argv=None) -> int:
     ap.add_argument("--show-tools", action="store_true",
                     help="print each tool call the agent made")
     args = ap.parse_args(argv)
+    _load_env()
 
     if args.list_questions:
         print("Suggested questions:")
