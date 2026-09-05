@@ -272,8 +272,10 @@ action made things worse and undid it — which is the behaviour I'd want.
 The routing half, no — acquirer selection is Optimizer, not a merchant endpoint,
 and any project claiming otherwise is describing something that doesn't exist.
 The execution half is real: each decision creates a test-mode Order carrying the
-audit reference in `notes`. Written and unit-tested; never run live, because I
-had no test credentials.
+audit reference in `notes`. **Run live against a test account: 6 of 6 orders
+created, plus payment links.** One was fetched back to confirm it is a real
+record and not just a successful POST - the decision context is in the notes,
+readable from the Razorpay dashboard.
 
 **"What would you do next?"**
 Fit the congestion curve to real acquirer telemetry. Its knee and slope are a

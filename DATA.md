@@ -92,15 +92,32 @@ Nothing in this section is faked, stubbed, or shortcut.
 
 ### Razorpay integration — `razorguard/executor.py`
 
-**Real code, never executed against Razorpay's servers.** It builds genuine
-test-mode Order requests with the decision context in `notes` and calls the
-official `razorpay` SDK. Dry run is the default and a key not beginning
+**Real code, and it has been run against Razorpay's servers.** It builds
+genuine test-mode Order requests with the decision context in `notes` and calls
+the official `razorpay` SDK. Dry run remains the default and a key not beginning
 `rzp_test_` is refused (two tests assert that refusal).
 
-I had no Razorpay test credentials, so the live path has **never been run**.
-Order IDs shown in the dry-run output are `order_DRYRUN000004`-style
-placeholders, and are labelled `mode=dry_run` in every line so they can never be
-mistaken for real ones.
+Executed live against a Razorpay test account: **6 of 6 orders created**, plus
+payment links. One was fetched back to confirm it is a real record rather than a
+successful POST:
+
+```
+id      : order_TYDrGJBKKSVf3x
+amount  : 64000        (Rs 640.00)
+status  : created
+receipt : rg-4
+notes   : razorguard_audit_seq  : 4
+          razorguard_subject    : upi|sbi
+          razorguard_from       : gw_beta
+          razorguard_to         : gw_alpha
+          razorguard_reason     : moved 25.6% of upi/sbi from gw_beta to gw_alpha
+```
+
+That is the point of putting the decision context on the order: it is auditable
+from the Razorpay dashboard, outside this repository entirely.
+
+Dry-run output remains labelled `mode=dry_run` with `order_DRYRUN...` ids, so
+placeholder orders can never be mistaken for real ones.
 
 ### LLM narration — `razorguard/narrator.py`
 

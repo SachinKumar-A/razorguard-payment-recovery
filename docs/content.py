@@ -838,11 +838,13 @@ def complete_doc(f: Facts) -> List:
         f"<b>+{f.recovered['success_rate_gain_pp']:.2f} percentage points</b> "
         "of success rate, neither of which depends on a price."))
     A(P(
-        "Two components are real code that has never run against a live "
-        "endpoint, because no credentials were available: the Razorpay "
-        "executor (dry run only, every line labelled mode=dry_run) and the LLM "
-        "narrator (every narration in this project came from the deterministic "
-        "template fallback). No result depends on either having run.", "small"))
+        "The Razorpay executor has been run against a live test account - 6 "
+        "of 6 orders created, one fetched back to confirm it is a real record "
+        "rather than a successful POST, with the decision context readable in "
+        "its notes from the Razorpay dashboard. The LLM narrator has not run "
+        "with a live key in this project; every narration came from the "
+        "deterministic template fallback, and no result depends on it having "
+        "run.", "small"))
     A(P(
         "None of this is taken on trust. "
         "<font face='Courier' size='8.5'>tests/test_integrity.py</font> asserts "
@@ -977,9 +979,10 @@ def roadmap_rows():
          "still defended by argument. The same sweep applied to each would show "
          "which earn their place."],
         ["5", "Live-mode execution against a real test account",
-         "The executor is written and unit-tested but has never run against "
-         "Razorpay's servers, because no test credentials were available. One "
-         "run would confirm the order shape and the notes limits."],
+         "Done. Executed against a Razorpay test account: 6 of 6 orders "
+         "created plus payment links, one fetched back to confirm the record "
+         "and its notes. What remains is wiring a real payment stream into "
+         "/ingest rather than the simulator."],
         ["6", "Persistence and replay",
          "Runs are in-memory. Writing observations and the ledger to SQLite "
          "would let the console replay historical incidents without "

@@ -522,6 +522,24 @@ Dry run is the default. Live calls require both environment variables *and*
 `--live`, and a key not beginning `rzp_test_` is refused outright. Two tests
 assert that refusal.
 
+**This has been run.** Against a Razorpay test account: 6 of 6 orders created,
+plus payment links. One was fetched back to confirm it is a real record rather
+than a successful POST:
+
+```text
+id      : order_TYDrGJBKKSVf3x        status  : created
+amount  : 64000  (Rs 640.00)          receipt : rg-4
+notes   : razorguard_audit_seq : 4
+          razorguard_subject   : upi|sbi
+          razorguard_from      : gw_beta
+          razorguard_to        : gw_alpha
+          razorguard_reason    : moved 25.6% of upi/sbi from gw_beta to gw_alpha
+```
+
+That is why the decision context goes on the order: the reasoning behind a
+recovery is readable from the Razorpay dashboard, outside this repository
+entirely.
+
 ---
 
 ## Layout
