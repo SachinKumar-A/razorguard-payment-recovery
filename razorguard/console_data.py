@@ -15,10 +15,11 @@ total, so that is what it carries now.
 """
 from __future__ import annotations
 
+import hashlib
 import pathlib
 import pickle
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -32,14 +33,52 @@ from razorguard.scenarios import default_incident_plan
 from razorguard.world import World
 
 CACHE = pathlib.Path(__file__).resolve().parent.parent / ".cache"
-CACHE_VERSION = 3     # bump when the shape of the payload below changes
+CACHE_VERSION = 4     # bump when the shape of the payload below changes
 
 
-def _compute(days: int, seed: int, routing: bool):
+#: Settings the console is allowed to vary, with the value each falls back to.
+#: Named here rather than in the console so the cache key and the settings page
+#: cannot drift apart: add a knob in one place and both follow.
+TUNABLE = {
+    "txn_per_min":       ("world",  900.0),
+    "max_shift":         ("policy", 0.80),
+    "max_divergence":    ("policy", 0.90),
+    "min_confidence":    ("policy", 0.95),
+    "min_drop_pp":       ("policy", 4.0),
+    "cooldown_min":      ("policy", 15),
+    "causes_per_hour":   ("policy", 4),
+    "target_advantage":  ("policy", 8.0),
+}
+
+POLICY_FIELD = {
+    "max_shift": "max_shift_fraction",
+    "max_divergence": "max_cumulative_divergence",
+    "min_confidence": "min_confidence",
+    "min_drop_pp": "min_drop_pp",
+    "cooldown_min": "action_cooldown_min",
+    "causes_per_hour": "max_causes_per_hour",
+    "target_advantage": "min_target_advantage_pp",
+}
+
+
+def defaults() -> Dict[str, float]:
+    return {k: v for k, (_, v) in TUNABLE.items()}
+
+
+def _configs(tuning: Dict[str, float], seed: int):
+    t = {**defaults(), **(tuning or {})}
+    world = WorldConfig(seed=seed, total_txn_per_min=float(t["txn_per_min"]))
+    policy = PolicyConfig(**{POLICY_FIELD[k]: type(TUNABLE[k][1])(t[k])
+                             for k in POLICY_FIELD})
+    return world, policy, t
+
+
+def _compute(days: int, seed: int, routing: bool, tuning: Dict[str, float]):
+    world_cfg, policy_cfg, _ = _configs(tuning, seed)
     incidents = default_incident_plan(days)
-    world = World(WorldConfig(seed=seed), incidents)
+    world = World(world_cfg, incidents)
     cp = ControlPlane(world, default_detector(),
-                      policy=PolicyEngine(PolicyConfig()), enable_routing=routing)
+                      policy=PolicyEngine(policy_cfg), enable_routing=routing)
     out = cp.run(days * 24 * 60)
 
     per_min: Dict[int, List[float]] = defaultdict(lambda: [0, 0, 0.0])
@@ -143,14 +182,26 @@ def _compute(days: int, seed: int, routing: bool):
     }
 
 
-def run(days: int, seed: int, routing: bool):
-    f = CACHE / f"run-{days}-{seed}-{int(routing)}-v{CACHE_VERSION}.pkl"
+def cache_key(days: int, seed: int, routing: bool,
+              tuning: Optional[Dict[str, float]] = None) -> str:
+    """One filename per distinct run. The tuning is hashed rather than spelled
+    out so adding a knob does not change the shape of every existing name."""
+    t = {**defaults(), **(tuning or {})}
+    digest = hashlib.sha1(
+        repr(sorted((k, float(v)) for k, v in t.items())).encode()
+    ).hexdigest()[:10]
+    return f"run-{days}-{seed}-{int(routing)}-{digest}-v{CACHE_VERSION}.pkl"
+
+
+def run(days: int, seed: int, routing: bool,
+        tuning: Optional[Dict[str, float]] = None):
+    f = CACHE / cache_key(days, seed, routing, tuning)
     if f.is_file():
         try:
             return pickle.loads(f.read_bytes())
         except Exception:
             pass          # a stale or half-written cache is not a reason to fail
-    data = _compute(days, seed, routing)
+    data = _compute(days, seed, routing, tuning or {})
     try:
         CACHE.mkdir(exist_ok=True)
         f.write_bytes(pickle.dumps(data, protocol=pickle.HIGHEST_PROTOCOL))

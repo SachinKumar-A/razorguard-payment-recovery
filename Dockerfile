@@ -18,6 +18,10 @@ RUN pip install --no-cache-dir -r requirements-service.txt
 
 COPY razorguard/ ./razorguard/
 COPY app.py README.md ./
+# Streamlit paints its own chrome before any of our CSS lands, so the base
+# theme has to ship with the image or the container's first paint flashes dark
+# and the widgets never match the page at all.
+COPY .streamlit/config.toml ./.streamlit/
 # The console renders the mark and wordmark; without these it falls back to
 # plain text and the container quietly looks worse than the local run.
 COPY assets/ ./assets/

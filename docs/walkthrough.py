@@ -310,31 +310,50 @@ def build(f: Facts):
     A(step(5, "See it in a browser"))
     A(code("streamlit run app.py"))
     A(P("Opens at <font face='Courier' size='8.5'>localhost:8501</font>. The "
-        "first run of a given seed takes about forty seconds while both arms "
-        "execute; the result is written to <font face='Courier' size='8.5'>"
-        ".cache/</font> and every load after that is about a second. The "
-        "Docker image ships with the default seed already warmed."))
+        "first run of a given set of settings takes about forty seconds while "
+        "both arms execute; the result is written to <font face='Courier' "
+        "size='8.5'>.cache/</font> and every load after that is about a "
+        "second. The Docker image ships with the defaults already warmed."))
+    A(P("Ten pages, grouped by what you are doing. Every route lives in the "
+        "URL &mdash; including the simulation settings &mdash; so the tiles "
+        "along the top are real links, a view can be sent to somebody as a "
+        "URL, and the address bar describes the run that produced what is on "
+        "screen."))
     A(bullets([
         "<b>Top row</b> &mdash; recovered net of fees, payments saved, actions "
-        "taken against actions refused, rollbacks.",
-        "<b>Charts</b> &mdash; cumulative recovery, then success rate with the "
-        "router on and off. Red bands are injected incidents; triangles are "
-        "actions and rollbacks. Scroll to zoom into a single incident, drag to "
-        "pan, hover for the values under the pointer.",
-        "<b>Decision record tab</b> &mdash; the eighteen incidents as ranked "
+        "taken, refusals, rollbacks. Click any tile to land on the page that "
+        "explains it.",
+        "<b>Overview</b> &mdash; cumulative recovery, then success rate with "
+        "the router on and off. Red bands are injected incidents; triangles "
+        "are actions and rollbacks. Scroll to zoom into a single incident, "
+        "drag to pan, hover for the values under the pointer.",
+        "<b>Decision record</b> &mdash; the eighteen incidents as ranked "
         "cards, heaviest first, each carrying the decision path that produced "
         "it: what the drop was, how fast it was caught, how much money was at "
         "risk, which bounds were checked, what was done, and what it was "
-        "worth. Cells outlined in blue were measured against the control arm; "
-        "the rest were declared before the run started.",
-        "<b>Incident replay tab</b> &mdash; the same trace as Step 1, as "
-        "colour-coded ledger lines. Pick an incident, filter by decision type.",
-        "<b>What it refused tab</b> &mdash; every policy rule that stopped a "
-        "money movement, how often, and what that rule protects against. "
-        "Worth more than the successes.",
-        "<b>How this was measured tab</b> &mdash; the paired design, the "
-        "guard that refuses to report when the arms diverge, and where the "
-        "model is and is not.",
+        "worth. Cells tinted blue were measured against the control arm; the "
+        "rest were declared before the run started.",
+        "<b>Incident replay</b> &mdash; one incident's ledger, line by line, "
+        "matched by subject as well as by time so an overlapping incident "
+        "cannot lend this one its actions.",
+        "<b>Recovery</b> &mdash; gross, the fees on it, net, and which "
+        "incident each rupee came from. Negative bars are shown, not dropped.",
+        "<b>Actions</b> and <b>Rollbacks</b> &mdash; every money movement, and "
+        "every one the system undid after measuring the destination.",
+        "<b>Refused</b> &mdash; every rule that stopped a money movement, how "
+        "often, and what it protects against. Worth more than the successes. "
+        "The engine's 93 refusals are reconciled on the page against the 57 "
+        "that named a rule, so the two counters cannot be mistaken for a "
+        "contradiction.",
+        "<b>Audit ledger</b> &mdash; the full append-only record, filterable.",
+        "<b>How it was measured</b> &mdash; the paired design, the guard that "
+        "refuses to report when the arms diverge, and where the model is and "
+        "is not.",
+        "<b>Settings</b> &mdash; change the seed, the simulated days, fleet "
+        "traffic, and all seven policy bounds, then re-run. These are not "
+        "cosmetic: they feed WorldConfig and PolicyConfig directly. Tighten "
+        "the shift cap to the original 40% and gross recovery falls from "
+        "Rs 1.20 cr to Rs 0.71 cr in front of you.",
     ]))
     A(what_it_proves(
         "The same evidence a terminal shows, in a form you can put in front of "

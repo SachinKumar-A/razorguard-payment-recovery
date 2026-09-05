@@ -128,3 +128,60 @@ def test_per_incident_recovery_is_close_to_the_run_total(cache_dir):
     whole_run = t["revenue"] - c["revenue"]
     assert whole_run > 0
     assert abs(per_incident - whole_run) / whole_run < 0.25
+
+
+# ---------------------------------------------------------------------------
+# Tunable settings. The console's settings page feeds these straight into the
+# simulator and the policy engine, so a control that quietly does nothing is
+# worse than no control at all.
+# ---------------------------------------------------------------------------
+
+def test_defaults_are_the_same_run_as_no_tuning(cache_dir):
+    """Passing the defaults explicitly must not be a different run, or every
+    link the console builds would miss the cache it just filled."""
+    assert (console_data.cache_key(1, 3, True)
+            == console_data.cache_key(1, 3, True, console_data.defaults()))
+    a = console_data.run(1, 3, routing=True)
+    b = console_data.run(1, 3, routing=True, tuning=console_data.defaults())
+    assert a["successes"] == b["successes"]
+    assert a["actions"] == b["actions"]
+
+
+def test_a_tighter_shift_cap_recovers_less(cache_dir):
+    """The measurement that set the default: 80% against the a-priori 40%."""
+    wide_c = console_data.run(1, 3, False)
+    wide_t = console_data.run(1, 3, True)
+    tight = {"max_shift": 0.40}
+    tight_c = console_data.run(1, 3, False, tight)
+    tight_t = console_data.run(1, 3, True, tight)
+
+    wide = wide_t["revenue"] - wide_c["revenue"]
+    narrow = tight_t["revenue"] - tight_c["revenue"]
+    assert wide > 0
+    assert narrow < wide, "the shift cap is not reaching the policy engine"
+
+
+def test_traffic_volume_reaches_the_simulator(cache_dir):
+    thin = console_data.run(1, 3, True, {"txn_per_min": 200.0})
+    assert thin["attempts"] < console_data.run(1, 3, True)["attempts"]
+
+
+def test_every_tunable_changes_the_cache_key(cache_dir):
+    """A knob that does not change the key would silently serve another
+    setting's cached run - the worst possible failure, because it looks like
+    the setting had no effect."""
+    base = console_data.cache_key(2, 7, True)
+    for name, value in console_data.defaults().items():
+        moved = console_data.cache_key(2, 7, True, {name: float(value) + 1})
+        assert moved != base, name
+
+
+def test_the_refusal_decomposition_does_not_go_negative(cache_dir):
+    """The console explains the engine's refusal count as rule-named refusals,
+    plus rollbacks, plus alarms a single breaker entry covered. If the first
+    two ever exceeded the total, that third line would be a negative number
+    presented as an explanation."""
+    t = console_data.run(1, 3, routing=True)
+    total = t["blocked"] + t["escalated"]
+    by_rule = sum(t["blocked_by_rule"].values())
+    assert by_rule + t["rollbacks"] <= total

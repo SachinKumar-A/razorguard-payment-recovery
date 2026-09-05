@@ -5,7 +5,7 @@
 .git/
 .gitignore
 .cache/
-.streamlit/
+.streamlit/cache/
 __pycache__/
 *.pyc
 *.pyo

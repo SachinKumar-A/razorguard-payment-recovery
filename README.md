@@ -334,7 +334,7 @@ python -m razorguard.execute    --limit 6            # Razorpay test mode, dry r
 streamlit run app.py                                   # operator console
 
 docker compose up --build                              # service + console
-pytest -q                                              # 210 property tests
+pytest -q                                              # 215 property tests
 ```
 
 Deterministic under `--seed`. Every figure below is copied from those commands'
@@ -350,17 +350,39 @@ results depend on which.
 
 ### The console
 
-`streamlit run app.py`. The first run of a seed takes about forty seconds while
-both arms execute; the result is written to `.cache/` and every load after that
-is about a second. The Docker image ships with the default seed already warmed
-at build time.
+`streamlit run app.py`. The first run of a given set of settings takes about
+forty seconds while both arms execute; the result is written to `.cache/` and
+every load after that is about a second. The Docker image ships with the
+default settings already warmed at build time.
+
+Ten pages, grouped into what the reader is doing — looking at the evidence,
+at the money, or at whether any of it can be trusted. **Every route lives in
+the URL**, including the simulation settings, so the KPI tiles are real links,
+a view can be sent to somebody as a URL, and the address bar is a readable
+description of the run that produced what is on screen.
 
 Its centre is the **decision record**: the eighteen incidents as ranked cards,
 heaviest first, each carrying the path that produced it — what the drop was,
 how fast it was caught, how much money was at risk, which bounds were checked,
-what was done, and what that was worth. Cells outlined in blue were measured
+what was done, and what that was worth. Cells tinted blue were measured
 against the control arm; the rest were declared before the run started, and
 keeping those two visually distinct is the point.
+
+**Settings are not cosmetic.** The settings page feeds the seed, the simulated
+days, fleet traffic and all seven policy bounds straight into `WorldConfig` and
+`PolicyConfig` and re-runs both arms. Tightening the shift cap to the original
+a-priori 40% takes gross recovery from ₹1.20 cr to ₹0.71 cr on the
+spot; dropping the anti-oscillation budget to one cause per hour roughly halves
+it and pushes refusals from 93 to 147. Four tests assert that every knob reaches
+the engine and changes the cache key, because a control that quietly does
+nothing is worse than no control.
+
+**Refusals reconcile on screen.** The engine counts 93 refusals; the ledger
+names a policy rule on 57 of them. The difference is 32 rollbacks (counted as
+escalations, written as `rollback` rather than `decision` entries, so they carry
+no rule) and 4 alarms covered by a single already-open-breaker entry. The
+console shows that decomposition rather than printing two numbers and hoping
+nobody subtracts them.
 
 One thing that record forced a correction on. Per-incident recovery was
 originally measured over the slices the incident broke, which made the biggest
@@ -616,12 +638,13 @@ a test asserts it.
 **On the branding.** The mark and wordmark are original artwork, and Razorpay's
 logo is not reproduced anywhere in this repository.
 
-The console runs on a dark design system carried over from an earlier project
-of mine rather than on Razorpay's palette: layered surfaces instead of one flat
-ground, a single accent reserved for interaction, and a separate semantic scale
-for outcomes so a colour never means two things at once. An operator console
-that gets stared at for an hour during an incident has different requirements
-from a marketing page, and the palette follows the requirement rather than the
+The console runs on a "light clinical" design system carried over from an
+earlier project of mine rather than on Razorpay's palette: paper ground,
+near-black ink, hairline rules, structure carried by typography and alignment
+rather than filled boxes — so the only saturated colour on screen is risk,
+and it always means the same thing. One accent, reserved for interaction and
+never used for risk. An operator console gets read under fluorescent light,
+projected, and printed; the palette follows that requirement rather than the
 brand.
 
 ---

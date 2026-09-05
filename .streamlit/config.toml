@@ -1,15 +1,13 @@
-# RazorGuard console theme.
-#
-# Razorpay's palette: their signature blue on a near-black navy, with generous
-# whitespace and a single accent. Referenced deliberately - this is a submission
-# to their buildathon and it should look like it belongs next to their product -
-# but the mark and every asset here are original.
-
+# The console is a light-clinical design: paper ground, near-black ink,
+# hairline rules. Streamlit paints its own chrome - widgets, the sidebar, the
+# dataframe - before any of our CSS lands, so the base theme has to agree or
+# the first paint flashes dark and the widgets never match at all.
 [theme]
-primaryColor = "#3395FF"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F4F7FC"
-textColor = "#02042B"
+base = "light"
+primaryColor = "#1d4ed8"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#fafafa"
+textColor = "#09090b"
 font = "sans serif"
 
 [server]
