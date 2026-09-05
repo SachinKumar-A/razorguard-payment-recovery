@@ -86,6 +86,14 @@ streamlit run app.py                         # expect: console loads
 > why the system now measures the realised effect of its own actions and halts
 > when they stop paying.
 
+**If asked why this matters commercially** — Razorpay's core payments business
+turned EBITDA-positive in FY25 and they are filing for a late-2026 listing.
+Public-market investors scrutinise unit economics, which is exactly the language
+this project already speaks: it reports recovery **net of processing cost**, not
+gross, and it refuses to act where the intervention costs more than it saves.
+Recovered payments also protect the 94% merchant retention number, because
+merchants churn on failed checkouts. Say it in one sentence, not three.
+
 **Repo:** `<your-repo-url>` · **Video:** `<your-video-url>`
 **Architecture:** `docs/RazorGuard-Complete-Documentation.pdf` (sections 8–9),
 or the README.
@@ -311,6 +319,15 @@ effect of its own shifts and halts when they stop paying. It limits the damage
 rather than removing it, and the honest conclusion is that this needs acquirers
 with spare capacity to be worth deploying. I would rather ship that sentence
 than a number that only holds on the fleets I happened to test.
+
+**"What's the business case?"**
+Two things, and they're the ones a company heading for a listing cares about.
+First, this reports recovery **net of processing cost** rather than gross —
+acquirers price differently, so moving volume changes what the merchant pays,
+and a system that only counts the upside is ignoring half its own ledger.
+Second, failed checkouts are a retention problem, not just a revenue one:
+merchants leave over them. A success-rate improvement defends the retention
+number as well as the topline.
 
 **"What's the weakest part?"**
 That same curve, and that the confidence interval covers traffic randomness but
