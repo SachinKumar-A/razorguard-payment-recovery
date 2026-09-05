@@ -23,6 +23,19 @@ cp -n .env.example .env       # -n: never clobber an existing file
 docker compose up --build
 ```
 
+Verified end to end: image builds, both containers report healthy, the state
+volume survives a container restart (`restored: replayed=2 weights=72`), the
+service runs unprivileged as uid 10001, and a signed `/ingest` is accepted while
+the same signature against a tampered body is refused.
+
+**If the build fails with `docker-credential-desktop: executable file not found`**,
+Docker Desktop's credential helper is not on your PATH. It ships with Docker; a
+new terminal after install usually picks it up, or add it for the session:
+
+```powershell
+$env:PATH = "$env:ProgramFiles\Docker\Dockeresourcesin;$env:PATH"
+```
+
 Docker is optional. The service runs the same way without it, and that path is
 the one covered by tests:
 
