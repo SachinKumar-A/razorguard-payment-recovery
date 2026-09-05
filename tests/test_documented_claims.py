@@ -150,3 +150,68 @@ def test_the_readme_does_not_claim_a_figure_the_json_contradicts(results):
     present = [h for h in old_headlines if h in readme]
     assert not present, (
         f"README still quotes superseded headline figures: {present}")
+
+
+# ---------------------------------------------------------------------------
+# The pitch script. It is spoken aloud on camera, so a stale figure in it is
+# worse than a stale figure in a document nobody reads out.
+# ---------------------------------------------------------------------------
+
+def test_the_pitch_script_quotes_the_benchmarks(results):
+    """Every number said on camera has to be one the repository produces."""
+    from docs.build_docs import Facts, rupees
+    from docs.pitch import script
+
+    spoken = []
+
+    import docs.pitch as pitch
+    original = pitch.beat
+
+    def capture(clock, seconds, title, screen, words, note=""):
+        spoken.append(words)
+        return original(clock, seconds, title, screen, words, note)
+
+    pitch.beat = capture
+    try:
+        script(Facts())
+    finally:
+        pitch.beat = original
+
+    joined = " ".join(spoken)
+    val = results["validation"]["summary"]
+    for figure in (rupees(val["recovered_inr"]["mean"]),
+                   rupees(val["recovered_inr"]["ci_lo"]),
+                   rupees(val["recovered_inr"]["ci_hi"]),
+                   f"{val['share_of_exposure']['mean']:.1%}",
+                   f"{val['sr_gain_pp']['mean']:.2f}"):
+        assert figure in joined, figure
+
+
+def test_the_pitch_fits_three_minutes():
+    """413 words is about 165 seconds at a normal speaking pace. Past roughly
+    450 there is no room left for the pauses and the clicking, and the take
+    runs over."""
+    import re
+
+    from docs.build_docs import Facts
+    import docs.pitch as pitch
+
+    spoken = []
+    original = pitch.beat
+
+    def capture(clock, seconds, title, screen, words, note=""):
+        spoken.append(words)
+        return original(clock, seconds, title, screen, words, note)
+
+    pitch.beat = capture
+    try:
+        pitch.script(Facts())
+    finally:
+        pitch.beat = original
+
+    words = 0
+    for block in spoken:
+        plain = re.sub(r"\[[^\]]*\]", "", re.sub(r"<[^>]+>", "", block))
+        plain = plain.replace("&mdash;", " ").replace("&rarr;", " ")
+        words += len(plain.split())
+    assert 350 <= words <= 450, f"{words} words is not a three-minute script"

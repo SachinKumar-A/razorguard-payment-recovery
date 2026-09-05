@@ -332,9 +332,10 @@ python -m razorguard.narrate    --claude             # LLM note vs template
 python -m razorguard.investigate "why did traffic move at 03:12?"
 python -m razorguard.execute    --limit 6            # Razorpay test mode, dry run
 streamlit run app.py                                   # operator console
+python -m docs.pitch                                   # the 3-minute pitch script
 
 docker compose up --build                              # service + console
-pytest -q                                              # 228 property tests
+pytest -q                                              # 230 property tests
 ```
 
 Deterministic under `--seed`. Every figure below is copied from those commands'
