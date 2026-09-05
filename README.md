@@ -373,6 +373,17 @@ either side, which incident was live, and the ledger entries within three
 minutes of it, on a frosted panel over the chart. `?at=<minute>` opens the
 same panel from a link.
 
+**On the charts being fast.** Altair inlines its data into the spec, so the
+two timeline charts were shipping about **1.25 MB of JSON to the browser on
+every rerun** — ten columns at full float precision, plus 2,880 pre-rendered
+clock strings, plus a melt that doubled the rows of the second chart. Sending
+only the columns each chart draws, rounding the rates to the four places the
+axis actually shows, computing the clock label in Vega, and layering the two
+success-rate lines off one frame instead of melting takes that to **433 KB**.
+The tape is composited rather than repainted, and the cards are
+`content-visibility: auto`, so the eighteen off-screen ones cost nothing until
+they are scrolled to.
+
 Ten pages, grouped into what the reader is doing — looking at the evidence,
 at the money, or at whether any of it can be trusted. **Every route lives in
 the URL**, including the simulation settings, so the KPI tiles are real links,

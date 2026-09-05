@@ -119,7 +119,7 @@ CSS_TOKENS = """
   --ink:    #09090b;
   --body:   #3f3f46;
   --muted:  #71717a;
-  --faint:  #a1a1aa;
+  --faint:  #8b8b94;
 
   /* interaction - one accent, never used for risk */
   --accent: #1d4ed8;
@@ -150,7 +150,7 @@ CSS_TOKENS = """
    raising the root raises the widgets Streamlit draws for itself at the same
    time - which is the point: a console where the chrome and the content
    disagree about scale reads as two applications stapled together. */
-html{-webkit-text-size-adjust:100%; font-size:17.5px}
+html{-webkit-text-size-adjust:100%; font-size:16px}
 body, .stApp {background:var(--paper); color:var(--body);
   font-family:"Inter", ui-sans-serif, system-ui, sans-serif;
   font-feature-settings:"kern" 1,"liga" 1,"cv05" 1,"ss01" 1;
@@ -176,38 +176,54 @@ CSS_NAV = """
 /* band 1 - status strip. No links: everything it names is either on the
    navigation below it or is a fact about the run, and a row of duplicate
    routes was making the reader choose between two identical paths. */
-.topbar{background:var(--chrome); color:#c9c7ec; padding-top:.7rem;
-  padding-bottom:.7rem; display:flex; align-items:center; gap:1.6rem;
+.st-key-rgtop{background:var(--chrome); margin-left:-1.5rem;
+  margin-right:-1.5rem; padding:.5rem 1.5rem;}
+.st-key-rgtop [data-testid="stHorizontalBlock"]{align-items:center}
+.st-key-rgtop [data-testid="stElementContainer"]{margin:0}
+.st-key-rgtop button{border:1px solid rgba(255,255,255,.38)!important;
+  background:rgba(255,255,255,.10)!important; border-radius:5px;
+  padding:.44rem .9rem!important; box-shadow:none!important;
+  min-height:0!important; transition:background-color .15s ease}
+.st-key-rgtop button:hover{background:#fff!important; border-color:#fff!important}
+.st-key-rgtop button p{color:#fff!important; font-size:.8rem!important;
+  font-weight:600!important; margin:0!important; letter-spacing:.03em}
+.st-key-rgtop button:hover p{color:var(--chrome)!important}
+.topbar{color:#c9c7ec; display:flex; align-items:center; gap:1.6rem;
   flex-wrap:wrap;}
-.tb-grid{display:flex; gap:2.4rem; flex-wrap:wrap; flex:1}
+.tb-grid{display:flex; gap:2.1rem; flex-wrap:wrap; flex:1}
 .tb-i{line-height:1.35}
-.tb-k{font-size:.66rem; letter-spacing:.14em; text-transform:uppercase;
+.tb-k{font-size:.63rem; letter-spacing:.14em; text-transform:uppercase;
   color:#9d9ad0; font-weight:600; margin-bottom:.16rem}
-.tb-v{font-size:1.02rem; color:#fff; font-weight:600;
+.tb-v{font-size:.94rem; color:#fff; font-weight:600;
   font-variant-numeric:tabular-nums; letter-spacing:-.01em}
-.tb-v small{font-size:.78rem; font-weight:400; color:#c9c7ec;
+.tb-v small{font-size:.73rem; font-weight:400; color:#c9c7ec;
   letter-spacing:0; margin-left:.3rem}
 
 /* band 2 - the board */
 .board{background:var(--paper); border-bottom:1px solid var(--rule);
   display:flex; align-items:center; gap:1.9rem; flex-wrap:wrap;
   padding-top:1.1rem; padding-bottom:1.1rem;}
-.board img{height:104px; display:block; flex:none}
-.board .tag{font-size:.95rem; color:var(--body); line-height:1.6;
-  max-width:40ch; border-left:1px solid var(--rule); padding-left:1.4rem;}
+.board img{height:82px; display:block; flex:none}
+/* Two lines, split explicitly rather than left to whatever the container
+   width happens to produce. It is the one sentence that says what the thing
+   does, so where it breaks is a decision, not an accident. */
+.board .tag{font-size:1.06rem; color:var(--body); line-height:1.55;
+  border-left:2px solid var(--rule); padding-left:1.4rem; flex:1;
+  min-width:22rem; max-width:none; letter-spacing:-.005em;}
+.board .tag b{color:var(--ink); font-weight:650}
 .board .tag b{color:var(--ink); font-weight:600}
-.board .sp{flex:1; min-width:.5rem}
+.board .sp{flex:0; min-width:.25rem}
 .quotes{display:flex; align-items:stretch; flex-wrap:wrap}
-.q{padding:0 1.25rem; border-left:1px solid var(--rule); min-width:9.6rem}
+.q{padding:0 1.05rem; border-left:1px solid var(--rule); min-width:8.6rem}
 .q:first-child{border-left:none}
-.q .qk{font-size:.68rem; letter-spacing:.1em; text-transform:uppercase;
+.q .qk{font-size:.66rem; letter-spacing:.1em; text-transform:uppercase;
   color:var(--muted); font-weight:600; margin-bottom:.28rem}
-.q .qv{font-size:1.62rem; font-weight:700; color:var(--ink); line-height:1.1;
+.q .qv{font-size:1.34rem; font-weight:700; color:var(--ink); line-height:1.1;
   font-variant-numeric:tabular-nums; display:flex; align-items:center;
   gap:.3rem; letter-spacing:-.025em}
 .q .qv svg{width:15px; height:15px}
 .q.up .qv{color:var(--low)} .q.down .qv{color:var(--critical)}
-.q .qd{font-size:.82rem; color:var(--muted); margin-top:.3rem;
+.q .qd{font-size:.76rem; color:var(--muted); margin-top:.3rem;
   font-variant-numeric:tabular-nums}
 .q .qd b{color:var(--ink); font-weight:600}
 .live{display:inline-flex; align-items:center; gap:.4rem; font-size:.72rem;
@@ -222,25 +238,37 @@ CSS_NAV = """
    position lost, and the websocket reconnecting. A button reruns the script
    in place and the URL is updated alongside it, so links stay shareable and
    the back button still works, without the reload.                       */
-.st-key-rgnav{background:var(--paper); border-bottom:2px solid var(--rule);
-  position:sticky; top:0; z-index:50;}
+/* The strip is sunk and the active item is raised out of it, the way a tab
+   behaves. Flat text on a flat ground was the problem: nothing announced that
+   this row was the navigation at all. */
+.st-key-rgnav{background:var(--sunk); border-bottom:2px solid var(--rule2);
+  border-top:1px solid var(--rule); position:sticky; top:0; z-index:50;}
 .st-key-rgnav [data-testid="stHorizontalBlock"]{gap:0!important;
   flex-wrap:nowrap!important}
 .st-key-rgnav [data-testid="stColumn"]{min-width:0}
 .st-key-rgnav [data-testid="stElementContainer"]{margin:0}
-.st-key-rgnav button{width:100%; border:none!important; border-radius:0!important;
-  background:transparent!important; padding:1.05rem .35rem!important;
-  position:relative; box-shadow:none!important; min-height:0!important}
-.st-key-rgnav button p{font-size:.9rem!important; font-weight:600!important;
-  letter-spacing:.04em; text-transform:uppercase; color:var(--body);
-  white-space:nowrap; margin:0!important; line-height:1.2}
-.st-key-rgnav button:hover{background:var(--sunk)!important}
+.st-key-rgnav button{width:100%; border:none!important;
+  border-radius:0!important; background:transparent!important;
+  padding:.92rem .3rem!important; position:relative; box-shadow:none!important;
+  min-height:0!important; transition:background-color .15s ease}
+.st-key-rgnav button p{font-size:.82rem!important; font-weight:600!important;
+  letter-spacing:.045em; text-transform:uppercase; color:var(--muted);
+  white-space:nowrap; margin:0!important; line-height:1.2;
+  display:inline-flex; align-items:center; gap:.35rem}
+.st-key-rgnav button p [data-testid="stIconMaterial"]{font-size:1.05rem!important;
+  opacity:.7}
+.st-key-rgnav button:hover{background:rgba(255,255,255,.75)!important}
 .st-key-rgnav button:hover p{color:var(--chrome)}
 .st-key-rgnav button::after{content:""; position:absolute; left:50%; right:50%;
-  bottom:-2px; height:3px; background:var(--accent);
-  transition:left .2s ease, right .2s ease}
+  bottom:-2px; height:4px; background:var(--accent);
+  transition:left .18s ease, right .18s ease}
+.st-key-rgnav [data-testid="stBaseButton-primary"]{
+  background:var(--paper)!important; box-shadow:0 -1px 0 var(--rule) inset,
+  1px 0 0 var(--rule) inset, -1px 0 0 var(--rule) inset!important}
 .st-key-rgnav [data-testid="stBaseButton-primary"] p{color:var(--accent)!important}
-.st-key-rgnav [data-testid="stBaseButton-primary"]::after{left:.5rem; right:.5rem}
+.st-key-rgnav [data-testid="stBaseButton-primary"] p
+  [data-testid="stIconMaterial"]{opacity:1}
+.st-key-rgnav [data-testid="stBaseButton-primary"]::after{left:0; right:0}
 .st-key-rgnav button p code{font-family:inherit; font-size:.76rem!important;
   font-weight:700!important; background:var(--wash); color:var(--muted);
   border-radius:99px; padding:.05rem .4rem; margin-left:.3rem;
@@ -250,16 +278,21 @@ CSS_NAV = """
 
 /* band 4 - the tape */
 .tape{background:var(--sunk); border-bottom:1px solid var(--rule);
-  overflow:hidden; margin-bottom:1.1rem; position:relative;}
-.tape-in{display:flex; width:max-content; animation:tape 74s linear infinite}
+  overflow:hidden; contain:layout paint; margin-bottom:1.1rem; position:relative;}
+/* translate3d and will-change keep the tape on the compositor. Animating
+   translateX without them repaints a very wide element every frame, which is
+   most of what made this page feel heavy. */
+.tape-in{display:flex; width:max-content; animation:tape 74s linear infinite;
+  will-change:transform; backface-visibility:hidden}
 .tape:hover .tape-in{animation-play-state:paused}
-@keyframes tape{from{transform:translateX(0)} to{transform:translateX(-50%)}}
-.tk{display:inline-flex; align-items:baseline; gap:.55rem; padding:.5rem 1rem;
-  font-size:.87rem; border-left:3px solid var(--rule2); white-space:nowrap;
+@keyframes tape{from{transform:translate3d(0,0,0)}
+  to{transform:translate3d(-50%,0,0)}}
+.tk{display:inline-flex; align-items:baseline; gap:.5rem; padding:.45rem .9rem;
+  font-size:.81rem; border-left:3px solid var(--rule2); white-space:nowrap;
   margin:.5rem 0; color:var(--muted);}
 .tk.up{border-left-color:var(--low)} .tk.down{border-left-color:var(--critical)}
 .tk b{color:var(--ink); font-weight:700; font-family:var(--mono);
-  font-size:.83rem; letter-spacing:-.02em}
+  font-size:.78rem; letter-spacing:-.02em}
 .tk .v{color:var(--body); font-variant-numeric:tabular-nums}
 .tk .c{font-variant-numeric:tabular-nums; font-weight:600}
 .tk.up .c{color:var(--low)} .tk.down .c{color:var(--critical)}
@@ -287,8 +320,8 @@ CSS_NAV = """
   border-width:0 17px 17px 0; border-style:solid;
   border-color:var(--rule2) transparent;}
 .st-key-rgkpi button p{margin:0!important; color:var(--muted);
-  font-size:.86rem!important; line-height:1.45; font-weight:500}
-.st-key-rgkpi button p strong{display:block; font-size:2.15rem; line-height:1.05;
+  font-size:.8rem!important; line-height:1.45; font-weight:500}
+.st-key-rgkpi button p strong{display:block; font-size:1.78rem; line-height:1.05;
   letter-spacing:-.035em; color:var(--ink); font-weight:700;
   font-variant-numeric:tabular-nums; margin-bottom:.35rem}
 .st-key-rgkpi button p em{display:block; font-style:normal; font-size:.72rem;
@@ -318,18 +351,49 @@ CSS_NAV = """
 .pagehead{display:flex; align-items:baseline; gap:.9rem; flex-wrap:wrap;
   border-bottom:1px solid var(--rule); padding-bottom:.6rem;
   margin:1.1rem 0 1.1rem}
-.pagehead h2{font-size:1.62rem; font-weight:700; color:var(--ink); margin:0;
+.pagehead h2{font-size:1.4rem; font-weight:700; color:var(--ink); margin:0;
   letter-spacing:-.025em}
-.pagehead .ph-sub{font-size:.92rem; color:var(--muted)}
+.pagehead .ph-sub{font-size:.86rem; color:var(--muted)}
 .pagehead .ph-sp{flex:1}
 .pagehead .ph-as{font-size:.78rem; color:var(--faint);
   font-variant-numeric:tabular-nums}
-.sect{display:flex; align-items:center; gap:.5rem; font-size:.76rem;
-  letter-spacing:.12em; text-transform:uppercase; color:var(--muted);
+.sect{display:flex; align-items:center; gap:.5rem; font-size:.72rem;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--ink);
   font-weight:700; margin:1.6rem 0 .65rem 0;}
-.sect svg{width:15px; height:15px; stroke:var(--accent)}
-.hint{font-size:.8rem; color:var(--faint); margin:.2rem 0 .5rem}
-.lede{font-size:.98rem; color:var(--body); line-height:1.68; max-width:82ch;
+.sect::before{content:""; width:3px; height:15px; background:var(--accent);
+  border-radius:2px; flex:none}
+.sect::after{content:""; flex:1; height:1px; background:var(--rule);
+  margin-left:.3rem}
+.sect svg{width:15px; height:15px; stroke:var(--accent); flex:none}
+
+/* ---------- three-up explainer panels --------------------------------------
+   Prose in three columns with nothing around it reads as a wall. Boxing each
+   one gives the eye somewhere to stop, which is the whole job of a panel. */
+.tri{display:grid; grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));
+  gap:.7rem; margin:.35rem 0 1rem}
+.tc{border:1px solid var(--rule); border-radius:var(--r);
+  background:var(--paper); padding:.95rem 1.1rem 1rem;
+  border-top:3px solid var(--rule2)}
+.tc.low{border-top-color:var(--low)} .tc.high{border-top-color:var(--high)}
+.tc.chrome{border-top-color:var(--chrome)} .tc.acc{border-top-color:var(--accent)}
+.tc h4{margin:0 0 .45rem; font-size:.74rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); font-weight:700;
+  display:flex; align-items:center; gap:.4rem}
+.tc h4 svg{width:14px; height:14px; stroke:currentColor}
+.tc.low h4{color:var(--low)} .tc.high h4{color:var(--high)}
+.tc.chrome h4{color:var(--chrome)} .tc.acc h4{color:var(--accent)}
+.tc p{margin:0; font-size:.88rem; line-height:1.6; color:var(--body)}
+.tc p b{color:var(--ink); font-weight:650}
+.tc a{color:var(--accent); font-weight:600}
+.tc a:hover{text-decoration:underline}
+.hint{font-size:.8rem; color:var(--muted); margin:.2rem 0 .5rem}
+/* Layering two lines off one frame costs the automatic legend, so it is drawn
+   here instead - cheaper than shipping the data twice to keep it. */
+.legend{display:flex; gap:1.1rem; justify-content:flex-end; margin:.1rem 0 .2rem}
+.lg{display:inline-flex; align-items:center; gap:.4rem; font-size:.78rem;
+  color:var(--muted)}
+.lg i{width:14px; height:3px; border-radius:2px; display:inline-block}
+.lede{font-size:.92rem; color:var(--body); line-height:1.68; max-width:82ch;
   margin:0 0 1rem}
 .lede b{color:var(--ink); font-weight:600}
 """
@@ -339,7 +403,7 @@ CSS_CARD = """
 .note {display:flex; gap:.7rem; border:1px solid var(--rule);
   border-left:3px solid var(--medium); background:var(--paper);
   padding:.8rem 1rem; border-radius:0 var(--r) var(--r) 0;
-  font-size:.93rem; color:var(--body); margin:1rem 0 0 0; line-height:1.65;}
+  font-size:.88rem; color:var(--body); margin:1rem 0 0 0; line-height:1.62;}
 .note svg{width:18px; height:18px; stroke:var(--medium); flex:none;
   margin-top:.15rem}
 .note b{color:var(--ink); font-weight:600}
@@ -355,7 +419,8 @@ CSS_CARD = """
    The top card is deliberately heavier - more room, larger title, a wider
    spine - because it has to win the sixty-second test on its own.          */
 .card {border:1px solid var(--rule); border-radius:var(--r);
-  background:var(--panel); padding:1.3rem 1.45rem; margin-bottom:.85rem;
+  background:var(--panel); padding:1.3rem 1.45rem;
+  content-visibility:auto; contain-intrinsic-size:auto 460px; margin-bottom:.85rem;
   position:relative; overflow:hidden; transition:border-color .15s ease;}
 .card::before {content:""; position:absolute; left:0; top:0; bottom:0; width:3px;}
 .card.critical::before {background:var(--critical);}
@@ -386,9 +451,9 @@ CSS_CARD = """
 .score span {font-size:.66rem; color:var(--faint); display:block;
   letter-spacing:.07em; text-transform:uppercase;}
 
-.ctitle {font-size:1.22rem; font-weight:700; line-height:1.3; margin:0 0 .3rem 0;
+.ctitle {font-size:1.14rem; font-weight:700; line-height:1.3; margin:0 0 .3rem 0;
   color:var(--ink);}
-.card.hero .ctitle {font-size:1.78rem; line-height:1.25; letter-spacing:-.02em;}
+.card.hero .ctitle {font-size:1.52rem; line-height:1.25; letter-spacing:-.02em;}
 .cmeta {font-size:.82rem; color:var(--muted); font-family:var(--mono);
   margin-bottom:1rem;}
 
@@ -403,7 +468,7 @@ CSS_CARD = """
 .node:hover{background:var(--sunk)}
 .node .nk {font-size:.68rem; letter-spacing:.11em; text-transform:uppercase;
   color:var(--faint); margin-bottom:.3rem; font-weight:600;}
-.node .nv {font-size:.98rem; font-weight:700; margin-bottom:.18rem;
+.node .nv {font-size:.9rem; font-weight:700; margin-bottom:.18rem;
   color:var(--ink); line-height:1.25;}
 .node .ns {font-size:.75rem; color:var(--muted); line-height:1.35;}
 /* measured inputs carry the accent, so what came off the control arm is
@@ -442,12 +507,12 @@ CSS_DETAIL = """
 .mult .ms {margin-left:auto; font-size:.76rem; color:var(--accent2);}
 
 /* ---------- prose blocks ---------- */
-.why {font-size:.95rem; line-height:1.6; color:var(--body);}
+.why {font-size:.89rem; line-height:1.6; color:var(--body);}
 .next {border:1px solid #a7f3d0; background:var(--low-t); border-radius:var(--r);
   padding:.8rem 1rem; margin:1rem 0 .85rem 0;}
 .next .nl {font-size:.71rem; letter-spacing:.12em; text-transform:uppercase;
   color:var(--low); margin-bottom:.28rem; font-weight:600;}
-.next .nt {font-size:1.02rem; font-weight:500; line-height:1.5; color:var(--ink);}
+.next .nt {font-size:.95rem; font-weight:500; line-height:1.5; color:var(--ink);}
 .next .nt b{font-weight:700}
 /* Provenance is the graded element, so it must stay legible on a projector -
    quiet, but never small enough to be dismissed as fine print. */
@@ -496,7 +561,7 @@ CSS_DETAIL = """
   color:var(--muted)}
 .lrow .rule.bad{border-color:#fecaca; color:var(--critical);
   background:var(--critical-t)}
-.lrow .lb{font-size:.93rem; color:var(--ink); line-height:1.5}
+.lrow .lb{font-size:.87rem; color:var(--ink); line-height:1.5}
 
 /* ---------- reconciliation table ---------- */
 .rec{border:1px solid var(--rule); border-radius:var(--r); overflow:hidden;
@@ -521,7 +586,10 @@ CSS_CHROME = """
    panel reads as belonging to the chart rather than as another card.      */
 .moment{position:relative; border:1px solid var(--rule2); border-radius:10px;
   overflow:hidden; margin:.85rem 0 1.1rem;}
-.mo-bg{position:absolute; inset:-50px; filter:blur(30px);
+/* Soft gradients rather than a blur filter. A 30px blur over a panel-sized
+   box is repainted on every scroll and was costing more than it looked like
+   it could; radial stops get to the same place for nothing. */
+.mo-bg{position:absolute; inset:0;
   background:
     radial-gradient(430px 210px at 12% 0%,  rgba(29,78,216,.34), transparent 65%),
     radial-gradient(470px 230px at 78% 100%,rgba(5,150,105,.30), transparent 65%),
@@ -533,7 +601,7 @@ CSS_CHROME = """
   padding:1.15rem 1.35rem 1.2rem;}
 .mo-h{display:flex; align-items:baseline; gap:.75rem; flex-wrap:wrap;
   margin-bottom:.85rem}
-.mo-t{font-size:1.3rem; font-weight:700; color:var(--ink);
+.mo-t{font-size:1.15rem; font-weight:700; color:var(--ink);
   font-family:var(--mono); letter-spacing:-.02em}
 .mo-tag{font-size:.72rem; font-weight:700; letter-spacing:.08em;
   text-transform:uppercase; padding:.2rem .5rem; border-radius:3px;
@@ -549,10 +617,10 @@ CSS_CHROME = """
 .mo-f{background:rgba(255,255,255,.72); padding:.7rem .85rem}
 .mo-fk{font-size:.68rem; letter-spacing:.1em; text-transform:uppercase;
   color:var(--muted); font-weight:600; margin-bottom:.25rem}
-.mo-fv{font-size:1.12rem; font-weight:700; color:var(--ink);
+.mo-fv{font-size:1.02rem; font-weight:700; color:var(--ink);
   font-variant-numeric:tabular-nums; line-height:1.15}
 .mo-fv.up{color:var(--low)} .mo-fv.down{color:var(--critical)}
-.mo-fs{font-size:.72rem; color:var(--muted); margin-top:.2rem}
+.mo-fs{font-size:.74rem; color:var(--muted); margin-top:.2rem}
 .mo-in .lrow{background:rgba(255,255,255,.78)}
 .mo-in .lrow:hover{background:rgba(255,255,255,.95)}
 .mo-none{font-size:.9rem; color:var(--muted); padding:.5rem 0}
@@ -565,7 +633,7 @@ CSS_CHROME = """
 .tblwrap{border:1px solid var(--rule); border-radius:var(--r);
   overflow:hidden; margin-bottom:.7rem}
 .tblscroll{overflow-x:auto}
-.tbl{width:100%; border-collapse:collapse; font-size:.88rem}
+.tbl{width:100%; border-collapse:collapse; font-size:.83rem}
 .tbl thead th{background:var(--chrome); color:#fff; font-size:.72rem;
   letter-spacing:.09em; text-transform:uppercase; font-weight:700;
   padding:.58rem .8rem; text-align:left; white-space:nowrap;
@@ -801,27 +869,34 @@ def goto(view: str) -> None:
 # Every route is backed by real control-plane output. Nothing is invented to
 # pad the menu, and each carries a live count so a label arrives with its size
 # already attached.
+# id, label, group, count key, blurb, icon. The icons are Material glyphs
+# Streamlit renders inside a button label; a row of nine words in the same
+# weight and colour was the reason the bar read as body text rather than as
+# navigation.
 NAV = [
     ("overview",  "Overview",        "evidence", None,
-     "What the run did, minute by minute."),
+     "What the run did, minute by minute.", "monitoring"),
     ("decisions", "Decision record", "evidence", "incidents",
-     "Every incident as a card, with the reasoning that produced it."),
+     "Every incident as a card, with the reasoning that produced it.",
+     "fact_check"),
     ("replay",    "Incident replay", "evidence", None,
-     "One incident's ledger, line by line, as it was written."),
+     "One incident's ledger, line by line, as it was written.", "replay"),
     ("recovery",  "Recovery",        "money",    None,
-     "What was recovered, what it cost, and how it was measured."),
+     "What was recovered, what it cost, and how it was measured.", "payments"),
     ("actions",   "Actions",         "money",    "actions",
-     "Every routing action, where it moved traffic and why."),
+     "Every routing action, where it moved traffic and why.", "alt_route"),
     ("refused",   "Refused",         "money",    "refused",
-     "Every time the system declined to move money, and the rule that stopped it."),
+     "Every time the system declined to move money, and the rule that stopped it.",
+     "block"),
     ("rollbacks", "Rollbacks",       "money",    "rollbacks",
-     "Actions the system undid after measuring the destination."),
+     "Actions the system undid after measuring the destination.", "undo"),
     ("audit",     "Audit ledger",    "trust",    "audit",
-     "The full append-only record, filterable."),
+     "The full append-only record, filterable.", "receipt_long"),
     ("method",    "How it was measured", "trust", None,
-     "The paired design, and where the model is and is not."),
+     "The paired design, and where the model is and is not.", "science"),
     ("settings",  "Settings",        "trust",    None,
-     "Change the seed, the traffic and the policy bounds, then re-run."),
+     "Change the seed, the traffic and the policy bounds, then re-run.",
+     "tune"),
 ]
 GROUPS = ["evidence", "money", "trust"]
 # Settings is reachable from the sidebar and from the notes that mention it.
@@ -829,6 +904,7 @@ GROUPS = ["evidence", "money", "trust"]
 # a bar whose whole job is to stay legible at a glance.
 NAVBAR = [n[0] for n in NAV if n[0] != "settings"]
 BLURB = {n[0]: n[4] for n in NAV}
+ICON = {n[0]: n[5] for n in NAV}
 if VIEW not in BLURB:
     VIEW = "overview"
 
@@ -879,6 +955,14 @@ def bar(label: str, detail: str, pct: float, colour: str, source: str) -> str:
             f'<span class="src">{source}</span></div>'
             f'<div class="track2"><div class="fill" style="width:{w:.0f}%;'
             f'background:{colour}"></div></div></div>')
+
+
+def tri(cards) -> str:
+    """Three short explanations, each in its own panel. Prose in bare columns
+    reads as a wall; a box gives the eye somewhere to stop."""
+    return '<div class="tri">' + "".join(
+        f'<div class="tc {tone}"><h4>{icon(ic)}{esc(head)}</h4><p>{body}</p>'
+        f'</div>' for head, body, ic, tone in cards) + '</div>'
 
 
 def note(body: str, tone: str = "", label: str = "", ic: str = "alert") -> str:
@@ -1058,8 +1142,8 @@ def tb(key: str, value: str, sub: str = "") -> str:
 # Facts about the run, not routes. This strip used to carry five links that
 # duplicated the navigation directly below it, which made a reader choose
 # between two identical paths to the same page for no reason.
-st.markdown(
-    '<div class="topbar bleed"><div class="tb-grid">'
+_stats = (
+    '<div class="topbar"><div class="tb-grid">'
     + tb("Run", f'seed {S["seed"]}',
          f'{S["days"]} simulated day(s) &middot; '
          f'{S["txn_per_min"]:,.0f} payments/min')
@@ -1073,7 +1157,15 @@ st.markdown(
          else f"{len(NON_DEFAULT)} changed",
          "all bounds as benchmarked" if not NON_DEFAULT
          else "figures differ from the benchmark")
-    + '</div></div>', unsafe_allow_html=True)
+    + '</div></div>')
+
+with st.container(key="rgtop"):
+    _lc, _rc = st.columns([13, 2], vertical_alignment="center")
+    _lc.markdown(_stats, unsafe_allow_html=True)
+    if _rc.button(":material/tune: Settings", key="top_settings",
+                  width="stretch",
+                  help="Change the seed, the traffic and the policy bounds"):
+        goto("settings")
 
 # --------------------------------------------------------------- band 2
 _quotes = (
@@ -1099,8 +1191,8 @@ st.markdown(
     + (f'<img src="data:image/svg+xml;base64,{b64(LOGO)}" alt="RazorGuard">'
        if LOGO.exists() else '<h1 style="margin:0">RazorGuard</h1>')
     + '<div class="tag">Degradation caught at the slice a dashboard cannot '
-      'see, routed around under written bounds, and the recovery <b>measured '
-      'against a control arm rather than projected</b>.</div>'
+      'see, routed around under written bounds,<br>and the recovery '
+      '<b>measured against a control arm rather than projected</b>.</div>'
       '<div class="sp"></div>'
       f'<div class="quotes">{_quotes}</div></div>', unsafe_allow_html=True)
 
@@ -1110,12 +1202,14 @@ st.markdown(
 # reconnecting. A button reruns the script in place; the URL is updated
 # alongside it, so a view is still a link somebody can be sent.
 _bar = [n for n in NAV if n[0] in NAVBAR]
-_widths = [len(n[1]) + (4 if COUNTS.get(n[3]) is not None else 0) for n in _bar]
+_widths = [len(n[1]) + 5 + (4 if COUNTS.get(n[3]) is not None else 0)
+           for n in _bar]
 with st.container(key="rgnav"):
-    for _col, (_vid, _label, _grp, _ck, _blurb) in zip(
+    for _col, (_vid, _label, _grp, _ck, _blurb, _ic) in zip(
             st.columns(_widths), _bar):
         _n = COUNTS.get(_ck)
-        _lbl = _label + (f"  `{_n:,}`" if _n is not None else "")
+        _lbl = (f":material/{_ic}: {_label}"
+                + (f"  `{_n:,}`" if _n is not None else ""))
         if _col.button(_lbl, key=f"nav_{_vid}", help=_blurb,
                        type="primary" if _vid == VIEW else "tertiary",
                        width="stretch"):
@@ -1616,7 +1710,20 @@ if VIEW == "overview":
                     'values under the pointer &middot; <b>click any point to '
                     'open that minute</b></div>', unsafe_allow_html=True)
 
+        # Only the columns each chart actually draws, rounded. Altair inlines
+        # the whole frame into the spec, so shipping ten columns at full float
+        # precision was sending well over half a megabyte of JSON per chart to
+        # the browser on every rerun - which is most of what made this page
+        # feel slow. The clock label is computed in Vega instead of shipped as
+        # 2,880 strings.
         win = merged[(merged["minute"] >= lo) & (merged["minute"] <= hi)]
+        CLOCK = ("'d' + (floor(datum.minute/1440)+1) + ' ' + "
+                 "format(floor(datum.minute/60)%24,'02') + ':' + "
+                 "format(datum.minute%60,'02')")
+        win1 = win[["minute", "cumulative", "gap", "attempts"]]
+        win2 = win[["minute", "success_rate", "success_rate_ctl",
+                    "attempts"]].round({"success_rate": 4,
+                                        "success_rate_ctl": 4})
         winc = inc[(inc["end"] >= lo) & (inc["start"] <= hi)].copy()
         winc["mid"] = (winc[["start", "end"]].mean(axis=1)).astype(int)
         wacts = acts[(acts["minute"] >= lo) & (acts["minute"] <= hi)]
@@ -1649,7 +1756,7 @@ if VIEW == "overview":
             fontWeight="bold", color=C["critical"], opacity=.75).encode(
             x="mid:Q", y=alt.value(0), text="id:N")
 
-        base = alt.Chart(win)
+        base = alt.Chart(win1).transform_calculate(clock=CLOCK)
         area = base.mark_area(
             line={"color": C["accent"], "strokeWidth": 2},
             color=alt.Gradient(
@@ -1663,12 +1770,12 @@ if VIEW == "overview":
             y=alt.Y("cumulative:Q",
                     title="cumulative extra successful payments",
                     axis=alt.Axis(format=",", tickCount=5)))
-        zero = alt.Chart(win).mark_rule(
-            color=C["rule"], strokeWidth=1).encode(y=alt.datum(0))
+        zero = base.mark_rule(color=C["rule"], strokeWidth=1).encode(
+            y=alt.datum(0))
 
         # The run's final figure, written on the chart rather than left to the
         # reader to find by hovering the last pixel.
-        _last = win.iloc[-1:]
+        _last = win1.iloc[-1:]
         endpoint = alt.Chart(_last).mark_point(
             size=64, filled=True, color=C["accent"]).encode(
             x="minute:Q", y="cumulative:Q")
@@ -1728,27 +1835,30 @@ if VIEW == "overview":
         st.markdown(f'<div class="sect">{icon("trending")}Success rate, both '
                     f'arms</div>', unsafe_allow_html=True)
 
-        long = win.melt(id_vars=["minute", "clock"],
-                        value_vars=["success_rate", "success_rate_ctl"],
-                        var_name="arm", value_name="sr")
-        long["arm"] = long["arm"].map({"success_rate": "router on",
-                                       "success_rate_ctl": "router off"})
-        lines = alt.Chart(long).mark_line(
-            strokeWidth=1.5, interpolate="monotone").encode(
-            x=alt.X("minute:Q", title=None, axis=axis,
-                    scale=alt.Scale(domain=[lo, hi], nice=False)),
-            y=alt.Y("sr:Q", title="success rate", axis=alt.Axis(format="%"),
-                    scale=alt.Scale(zero=False)),
-            color=alt.Color("arm:N", title=None, scale=alt.Scale(
-                domain=["router on", "router off"],
-                range=[C["accent"], "#b8bcc4"]),
-                legend=alt.Legend(orient="top-right", direction="horizontal")))
+        # Two layers off one frame rather than a melt. Melting doubled the
+        # rows and made Altair inline the data twice; layering shares a single
+        # top-level dataset.
+        base2 = alt.Chart(win2).transform_calculate(clock=CLOCK)
+        _x = alt.X("minute:Q", title=None, axis=axis,
+                   scale=alt.Scale(domain=[lo, hi], nice=False))
+        off = base2.mark_line(strokeWidth=1.4, interpolate="monotone",
+                              color="#b8bcc4").encode(
+            x=_x, y=alt.Y("success_rate_ctl:Q", title="success rate",
+                          axis=alt.Axis(format="%"),
+                          scale=alt.Scale(zero=False)))
+        on = base2.mark_line(strokeWidth=1.9, interpolate="monotone",
+                             color=C["accent"]).encode(
+            x=_x, y=alt.Y("success_rate:Q", title="success rate",
+                          axis=alt.Axis(format="%"),
+                          scale=alt.Scale(zero=False)))
+        lines = off + on
+
         hover2 = alt.selection_point(nearest=True, on="pointermove",
-                                     fields=["minute"], empty=False)
-        xrule2 = alt.Chart(win).mark_rule(
+                                     fields=["minute"], empty=False,
+                                     name="hover2")
+        xrule2 = base2.mark_rule(
             color=C["faint"], strokeDash=[3, 3]).encode(
-            x="minute:Q",
-            opacity=alt.condition(hover2, alt.value(.85), alt.value(0)),
+            x=_x, opacity=alt.condition(hover2, alt.value(.85), alt.value(0)),
             tooltip=[alt.Tooltip("clock:N", title="at"),
                      alt.Tooltip("success_rate:Q", title="router on",
                                  format=".2%"),
@@ -1769,6 +1879,13 @@ if VIEW == "overview":
                 range=[C["low"], C["critical"]]), legend=None),
             tooltip=[alt.Tooltip("when:N", title="at"), "kind:N", "subject:N",
                      alt.Tooltip("summary:N", title="what")])
+
+        st.markdown(
+            '<div class="legend">'
+            f'<span class="lg"><i style="background:{C["accent"]}"></i>'
+            f'router on</span>'
+            f'<span class="lg"><i style="background:#b8bcc4"></i>'
+            f'router off</span></div>', unsafe_allow_html=True)
 
         st.altair_chart(
             (bands + lines + xrule2 + marks).add_params(zoom)
@@ -1939,29 +2056,26 @@ elif VIEW == "recovery":
         f'<span class="rv">{rupees(net.net_inr)}</span></div>'
         f'</div>', unsafe_allow_html=True)
 
-    a, b, c2 = st.columns(3)
-    a.markdown(
-        f'<div class="sect">{icon("coin")}Against the money at risk</div>'
-        f'<div class="why">The control arm lost <b>{rupees(control["exposure"])}'
-        f'</b> to these incidents. The treatment arm recovered '
-        f'<b>{d_rev / control["exposure"]:.1%}</b> of it. The rest is either '
-        f'unroutable \u2014 issuer-wide faults have no healthy destination \u2014 '
-        f'or below the action floor.</div>', unsafe_allow_html=True)
-    b.markdown(
-        f'<div class="sect">{icon("trending")}In payments</div>'
-        f'<div class="why"><b>{d_succ:,}</b> payments settled that failed in '
-        f'the control arm, out of <b>{control["attempts"]:,}</b> attempts '
-        f'seen identically by both. Fleet success rate moved '
-        f'{ctrl_sr:.2%} \u2192 {treat_sr:.2%}, a gain of '
-        f'<b>{(treat_sr - ctrl_sr) * 100:.2f}pp</b>.</div>',
-        unsafe_allow_html=True)
-    c2.markdown(
-        f'<div class="sect">{icon("target")}Why UPI matters</div>'
-        f'<div class="why">Zero MDR on UPI is regulation, not a discount. A '
-        f'recovered UPI payment costs nothing to settle, so it is pure margin; '
-        f'a recovered card payment gives 1.8% of itself back. Fees came to '
-        f'<b>{net.incremental_cost_inr / net.gross_inr:.1%}</b> of gross here.'
-        f'</div>', unsafe_allow_html=True)
+    st.markdown(tri([
+        ("Against the money at risk",
+         f'The control arm lost <b>{rupees(control["exposure"])}</b> to these '
+         f'incidents. The treatment arm recovered '
+         f'<b>{d_rev / control["exposure"]:.1%}</b> of it. The rest is either '
+         f'unroutable — issuer-wide faults have no healthy destination '
+         f'— or below the action floor.', "coin", "low"),
+        ("In payments",
+         f'<b>{d_succ:,}</b> payments settled that failed in the control arm, '
+         f'out of <b>{control["attempts"]:,}</b> attempts seen identically by '
+         f'both. Fleet success rate moved {ctrl_sr:.2%} → {treat_sr:.2%}, '
+         f'a gain of <b>{(treat_sr - ctrl_sr) * 100:.2f}pp</b>.',
+         "trending", "acc"),
+        ("Why UPI matters",
+         f'Zero MDR on UPI is regulation, not a discount. A recovered UPI '
+         f'payment costs nothing to settle, so it is pure margin; a recovered '
+         f'card payment gives 1.8% of itself back. Fees came to '
+         f'<b>{net.incremental_cost_inr / net.gross_inr:.1%}</b> of gross '
+         f'here.', "target", "chrome"),
+    ]), unsafe_allow_html=True)
 
     st.markdown(f'<div class="sect">{icon("layers")}Where it came from</div>',
                 unsafe_allow_html=True)
@@ -1996,25 +2110,23 @@ elif VIEW == "actions":
         st.info("No routing actions in this run.")
     else:
         by_key = acted["subject"].value_counts()
-        k1, k2, k3 = st.columns(3)
-        k1.markdown(
-            f'<div class="sect">{icon("route")}Spread</div><div class="why">'
-            f'<b>{len(by_key)}</b> distinct route keys touched, most often '
-            f'<code>{esc(by_key.index[0])}</code> at <b>{by_key.iloc[0]}</b> '
-            f'action(s). A wide incident legitimately fans out across every key '
-            f'its gateway served.</div>', unsafe_allow_html=True)
-        k2.markdown(
-            f'<div class="sect">{icon("undo")}Reversed</div><div class="why">'
-            f'<b>{treat["rollbacks"]:,}</b> were undone after the destination '
-            f'was measured and found wanting \u2014 '
-            f'{treat["rollbacks"] / max(treat["actions"], 1):.0%} of them. '
-            f'<a href="{link("rollbacks")}" target="_self">See which \u2192</a>'
-            f'</div>', unsafe_allow_html=True)
-        k3.markdown(
-            f'<div class="sect">{icon("check")}Restored</div><div class="why">'
-            f'<b>{treat["restores"]:,}</b> keys were returned to their baseline '
-            f'weights once the incident cleared. Nothing stays diverted because '
-            f'everybody forgot about it.</div>', unsafe_allow_html=True)
+        st.markdown(tri([
+            ("Spread",
+             f'<b>{len(by_key)}</b> distinct route keys touched, most often '
+             f'<code>{esc(by_key.index[0])}</code> at <b>{by_key.iloc[0]}</b> '
+             f'action(s). A wide incident legitimately fans out across every '
+             f'key its gateway served.', "route", "chrome"),
+            ("Reversed",
+             f'<b>{treat["rollbacks"]:,}</b> were undone after the destination '
+             f'was measured and found wanting — '
+             f'{treat["rollbacks"] / max(treat["actions"], 1):.0%} of them. '
+             f'<a href="{link("rollbacks")}" target="_self">See which '
+             f'→</a>', "undo", "high"),
+            ("Restored",
+             f'<b>{treat["restores"]:,}</b> keys were returned to their '
+             f'baseline weights once the incident cleared. Nothing stays '
+             f'diverted because everybody forgot about it.', "check", "low"),
+        ]), unsafe_allow_html=True)
 
         st.markdown(f'<div class="sect">{icon("layers")}Actions by route key'
                     f'</div>', unsafe_allow_html=True)
