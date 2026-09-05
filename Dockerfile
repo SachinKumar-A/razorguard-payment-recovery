@@ -18,6 +18,9 @@ RUN pip install --no-cache-dir -r requirements-service.txt
 
 COPY razorguard/ ./razorguard/
 COPY app.py README.md ./
+# The console renders the mark and wordmark; without these it falls back to
+# plain text and the container quietly looks worse than the local run.
+COPY assets/ ./assets/
 COPY bench/results/ ./bench/results/
 
 # Unprivileged, and /data is a mount point: the state database must outlive the
