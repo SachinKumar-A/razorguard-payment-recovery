@@ -14,7 +14,7 @@ Two modes, both configured by environment variable:
   a long-lived secret on the wire.
 
 If neither is configured the service refuses to start unless
-`REVENUEGUARD_ALLOW_INSECURE=1` is set explicitly. Defaulting to open would mean
+`RAZORGUARD_ALLOW_INSECURE=1` is set explicitly. Defaulting to open would mean
 the safe configuration is the one you have to remember, and that is the wrong
 way round.
 """
@@ -42,19 +42,19 @@ class AuthConfig:
 
     @classmethod
     def from_env(cls) -> "AuthConfig":
-        token = os.environ.get("REVENUEGUARD_TOKEN", "").strip()
-        hmac_key = os.environ.get("REVENUEGUARD_HMAC_KEY", "").strip()
+        token = os.environ.get("RAZORGUARD_TOKEN", "").strip()
+        hmac_key = os.environ.get("RAZORGUARD_HMAC_KEY", "").strip()
 
         if hmac_key:
             return cls("hmac", hmac_key)
         if token:
             return cls("token", token)
-        if os.environ.get("REVENUEGUARD_ALLOW_INSECURE") == "1":
+        if os.environ.get("RAZORGUARD_ALLOW_INSECURE") == "1":
             return cls("insecure")
         raise RuntimeError(
-            "no credential configured. Set REVENUEGUARD_HMAC_KEY (preferred) "
-            "or REVENUEGUARD_TOKEN. To run without authentication - only ever "
-            "on a private network - set REVENUEGUARD_ALLOW_INSECURE=1.")
+            "no credential configured. Set RAZORGUARD_HMAC_KEY (preferred) "
+            "or RAZORGUARD_TOKEN. To run without authentication - only ever "
+            "on a private network - set RAZORGUARD_ALLOW_INSECURE=1.")
 
     @property
     def enforced(self) -> bool:
@@ -93,8 +93,8 @@ def verify(config: AuthConfig, authorization: Optional[str],
 
     # hmac
     if not timestamp or not signature:
-        raise AuthError("missing X-RevenueGuard-Timestamp or "
-                        "X-RevenueGuard-Signature")
+        raise AuthError("missing X-RazorGuard-Timestamp or "
+                        "X-RazorGuard-Signature")
     try:
         sent_at = float(timestamp)
     except ValueError:

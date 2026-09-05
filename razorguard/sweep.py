@@ -8,7 +8,7 @@ This sweeps both detectors across their thresholds over identical traffic and
 reports the curve, then picks the operating point of each that sits under a
 false-alarm budget an on-call team would actually accept.
 
-    python -m revenueguard.sweep --days 2 --budget 1.0
+    python -m razorguard.sweep --days 2 --budget 1.0
 """
 import argparse
 import json
@@ -86,7 +86,7 @@ def best_under_budget(rows, family: str, budget: float) -> Optional[dict]:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="revenueguard.sweep")
+    ap = argparse.ArgumentParser(prog="razorguard.sweep")
     ap.add_argument("--days", type=int, default=2)
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--budget", type=float, default=1.0,

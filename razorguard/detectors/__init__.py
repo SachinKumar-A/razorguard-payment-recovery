@@ -9,7 +9,7 @@ def default_detector() -> Detector:
 
     A union of the fixed-threshold rule and the posterior drop test, at the
     operating point that won the matched-false-alarm comparison in
-    `python -m revenueguard.sweep`: 16 of 18 incidents at a median 5 minutes,
+    `python -m razorguard.sweep`: 16 of 18 incidents at a median 5 minutes,
     inside a budget of one false alarm per 1,000 slice-hours. That matches the
     best detection rate either member reaches alone and is 1.5 minutes faster
     than the member that reaches it.

@@ -1,7 +1,7 @@
 """CLI for the execution path.
 
-    python -m revenueguard.execute                 # dry run, no credentials
-    python -m revenueguard.execute --limit 5 --live --payment-links
+    python -m razorguard.execute                 # dry run, no credentials
+    python -m razorguard.execute --limit 5 --live --payment-links
 
 Live mode needs RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET, both test-mode.
 """
@@ -23,7 +23,7 @@ from .world import World
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="revenueguard.execute")
+    ap = argparse.ArgumentParser(prog="razorguard.execute")
     ap.add_argument("--days", type=int, default=1)
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--limit", type=int, default=10)

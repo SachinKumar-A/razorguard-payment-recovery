@@ -8,7 +8,7 @@ Choosing which acquirer a payment traverses is Razorpay's own product
 claims to "reroute traffic through the Razorpay API" is describing something
 that does not exist.
 
-So the routing half of RevenueGuard stays inside the simulation, where it is
+So the routing half of RazorGuard stays inside the simulation, where it is
 measured properly, and the executor demonstrates the half that *is* real: when
 the control plane decides a failed payment is worth re-attempting, it creates a
 genuine test-mode Order carrying the full decision context in `notes`, and
@@ -51,12 +51,12 @@ class RecoveryIntent:
         Razorpay dashboard can see which incident produced it and why.
         """
         return {
-            "revenueguard_audit_seq": str(self.audit_seq),
-            "revenueguard_minute": str(self.minute),
-            "revenueguard_subject": self.subject,
-            "revenueguard_from": self.source_gateway,
-            "revenueguard_to": self.target_gateway,
-            "revenueguard_reason": self.reason[:240],
+            "razorguard_audit_seq": str(self.audit_seq),
+            "razorguard_minute": str(self.minute),
+            "razorguard_subject": self.subject,
+            "razorguard_from": self.source_gateway,
+            "razorguard_to": self.target_gateway,
+            "razorguard_reason": self.reason[:240],
         }
 
     @property

@@ -4,14 +4,14 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from revenueguard.capacity import CapacityModel, capacities
-from revenueguard.config import GATEWAY_SHARE, ISSUERS, METHODS, WorldConfig
-from revenueguard.control_plane import ControlPlane
-from revenueguard.detectors import default_detector
-from revenueguard.policy import PolicyConfig, PolicyEngine
-from revenueguard.routing import RoutingTable
-from revenueguard.scenarios import default_incident_plan
-from revenueguard.world import World
+from razorguard.capacity import CapacityModel, capacities
+from razorguard.config import GATEWAY_SHARE, ISSUERS, METHODS, WorldConfig
+from razorguard.control_plane import ControlPlane
+from razorguard.detectors import default_detector
+from razorguard.policy import PolicyConfig, PolicyEngine
+from razorguard.routing import RoutingTable
+from razorguard.scenarios import default_incident_plan
+from razorguard.world import World
 
 M = CapacityModel()
 

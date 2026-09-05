@@ -10,18 +10,18 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from revenueguard.capacity import CapacityModel
-from revenueguard.config import WorldConfig
-from revenueguard.control_plane import (EFFICACY_COOLDOWN_MIN,
-                                        EFFICACY_MIN_SAMPLES,
+from razorguard.capacity import CapacityModel
+from razorguard.config import WorldConfig
+from razorguard.control_plane import (EFFICACY_COOLDOWN_MIN,
+                                      EFFICACY_MIN_SAMPLES,
                                         EFFICACY_TRIP_PP, ControlPlane,
                                         RunOutcome)
-from revenueguard.detectors import default_detector
-from revenueguard.ingest import BufferedSource
-from revenueguard.policy import PolicyConfig, PolicyEngine
-from revenueguard.scenarios import default_incident_plan
-from revenueguard.simulator import Observation
-from revenueguard.world import World
+from razorguard.detectors import default_detector
+from razorguard.ingest import BufferedSource
+from razorguard.policy import PolicyConfig, PolicyEngine
+from razorguard.scenarios import default_incident_plan
+from razorguard.simulator import Observation
+from razorguard.world import World
 
 
 def plane():
@@ -78,7 +78,7 @@ def test_an_open_breaker_blocks_every_shift():
     cp._update_breaker(10, out)
 
     before = out.actions
-    from revenueguard.detectors.base import Alarm
+    from razorguard.detectors.base import Alarm
     cp._handle_alarms(11, [Alarm(minute=11, slice_key="gw_beta|upi|hdfc",
                                  observed_sr=0.4, baseline_sr=0.95,
                                  confidence=0.999)], out)

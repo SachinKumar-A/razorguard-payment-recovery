@@ -42,7 +42,7 @@ class PolicyConfig:
     #: payments to load while the router recovered around 14,000. 80% sits at
     #: the knee of the measured curve: it captures essentially all the recovery
     #: available at 100% (42.4% of exposure against 42.9%) with fewer rollbacks
-    #: and under half the congestion cost. Re-run `python -m revenueguard.stress`
+    #: and under half the congestion cost. Re-run `python -m razorguard.stress`
     #: after changing the capacity model, because that curve is what sets this.
     max_shift_fraction: float = 0.80
     #: Total weight that may sit away from baseline for one key at any time.

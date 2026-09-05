@@ -1,4 +1,4 @@
-"""RevenueGuard operator console.
+"""RazorGuard operator console.
 
     streamlit run app.py
 
@@ -7,6 +7,8 @@ worth -- including the decisions it refused to make.
 """
 from __future__ import annotations
 
+import base64
+import pathlib
 from collections import defaultdict
 from typing import Dict, List
 
@@ -14,19 +16,68 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from revenueguard.config import WorldConfig
-from revenueguard.control_plane import ControlPlane
-from revenueguard.detectors import default_detector
-from revenueguard.experiment import exposure_inr
-from revenueguard.policy import PolicyConfig, PolicyEngine
-from revenueguard.scenarios import default_incident_plan
-from revenueguard.world import World
+from razorguard.config import WorldConfig
+from razorguard.control_plane import ControlPlane
+from razorguard.detectors import default_detector
+from razorguard.experiment import exposure_inr
+from razorguard.policy import PolicyConfig, PolicyEngine
+from razorguard.scenarios import default_incident_plan
+from razorguard.world import World
 
-st.set_page_config(page_title="RevenueGuard", page_icon="::", layout="wide")
+st.set_page_config(page_title="RazorGuard", page_icon="assets/razorguard-mark.svg",
+                   layout="wide", initial_sidebar_state="expanded")
+
+# Razorpay's palette. Referenced on purpose - this is a submission to their
+# buildathon and it should look like it belongs beside their product - but every
+# asset here is original and their logo is not reproduced anywhere.
+BRAND = {
+    "blue": "#3395FF",
+    "blue_dark": "#1B6FD1",
+    "navy": "#02042B",
+    "ink": "#0D2366",
+    "muted": "#5A6B8C",
+    "surface": "#F4F7FC",
+    "line": "#E3EAF5",
+    "good": "#0F9D58",
+    "warn": "#B45309",
+    "bad": "#FF4D57",
+}
+
+st.markdown(f"""
+<style>
+  .block-container {{ padding-top: 2.2rem; max-width: 1280px; }}
+  h1, h2, h3 {{ color: {BRAND['navy']}; letter-spacing: -0.02em; }}
+  h1 {{ font-weight: 700; }}
+  [data-testid="stMetricValue"] {{
+      color: {BRAND['navy']}; font-weight: 700; letter-spacing: -0.02em;
+  }}
+  [data-testid="stMetricLabel"] {{ color: {BRAND['muted']}; }}
+  [data-testid="stMetric"] {{
+      background: {BRAND['surface']};
+      border: 1px solid {BRAND['line']};
+      border-radius: 12px;
+      padding: 16px 18px;
+  }}
+  section[data-testid="stSidebar"] {{
+      background: {BRAND['navy']};
+  }}
+  section[data-testid="stSidebar"] * {{ color: #E8EEF9 !important; }}
+  section[data-testid="stSidebar"] strong {{ color: #FFFFFF !important; }}
+  .stTabs [data-baseweb="tab"] {{ font-weight: 600; }}
+  .stTabs [aria-selected="true"] {{ color: {BRAND['blue']}; }}
+  .rg-rule {{
+      height: 3px; border: 0; border-radius: 2px; margin: 0 0 18px 0;
+      background: linear-gradient(90deg, {BRAND['blue']}, {BRAND['ink']});
+  }}
+  .rg-note {{
+      color: {BRAND['muted']}; font-size: 0.86rem; line-height: 1.5;
+  }}
+</style>
+""", unsafe_allow_html=True)
 
 KIND_COLOUR = {
-    "detection": "#d97706", "proposal": "#64748b", "decision": "#0891b2",
-    "action": "#16a34a", "rollback": "#dc2626", "restore": "#7c3aed",
+    "detection": "#B45309", "proposal": "#5A6B8C", "decision": "#3395FF",
+    "action": "#0F9D58", "rollback": "#FF4D57", "restore": "#1B6FD1",
 }
 
 
@@ -83,7 +134,15 @@ def hhmm(minute: int) -> str:
 
 
 # ---------------------------------------------------------------- sidebar
-st.sidebar.title("RevenueGuard")
+_LOGO = pathlib.Path(__file__).parent / "assets" / "razorguard-lockup.svg"
+if _LOGO.exists():
+    st.markdown(
+        f'<img src="data:image/svg+xml;base64,'
+        f'{base64.b64encode(_LOGO.read_bytes()).decode()}" '
+        f'style="height:64px;margin-bottom:6px">', unsafe_allow_html=True)
+st.markdown('<hr class="rg-rule">', unsafe_allow_html=True)
+
+st.sidebar.title("RazorGuard")
 st.sidebar.caption("Payment degradation detection and bounded recovery")
 days = st.sidebar.slider("Simulated days", 1, 3, 2)
 seed = st.sidebar.number_input("Seed", value=7, step=1)
@@ -145,14 +204,16 @@ long = merged.melt(id_vars="minute",
 long["run"] = long["run"].map({"success_rate": "router on",
                                "success_rate_control": "router off"})
 
-bands = alt.Chart(treat["incidents"]).mark_rect(opacity=0.10, color="#dc2626").encode(
+bands = alt.Chart(treat["incidents"]).mark_rect(
+    opacity=0.10, color=BRAND["bad"]).encode(
     x="start:Q", x2="end:Q")
 
 line = alt.Chart(long).mark_line(strokeWidth=1.4).encode(
     x=alt.X("minute:Q", title="minute"),
     y=alt.Y("sr:Q", title="success rate", scale=alt.Scale(zero=False)),
     color=alt.Color("run:N", scale=alt.Scale(
-        domain=["router on", "router off"], range=["#16a34a", "#94a3b8"]),
+        domain=["router on", "router off"],
+        range=[BRAND["blue"], "#AEBBD1"]),
         legend=alt.Legend(title=None, orient="top-right")),
     tooltip=["minute:Q", "run:N", alt.Tooltip("sr:Q", format=".2%")])
 
@@ -210,7 +271,7 @@ with tab_refused:
         df = pd.DataFrame(sorted(rules.items(), key=lambda kv: -kv[1]),
                           columns=["rule", "times fired"])
         st.altair_chart(
-            alt.Chart(df).mark_bar(color="#0891b2").encode(
+            alt.Chart(df).mark_bar(color=BRAND["blue"]).encode(
                 x="times fired:Q", y=alt.Y("rule:N", sort="-x", title=None),
                 tooltip=["rule:N", "times fired:Q"]).properties(height=240),
             use_container_width=True)

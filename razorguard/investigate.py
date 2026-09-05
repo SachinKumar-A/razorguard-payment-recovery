@@ -1,8 +1,8 @@
 """Ask the control plane why it did something.
 
-    python -m revenueguard.investigate "why did traffic move off gw_beta at 03:12?"
-    python -m revenueguard.investigate --list-questions
-    python -m revenueguard.investigate --days 2 "was the 20:05 rollback justified?"
+    python -m razorguard.investigate "why did traffic move off gw_beta at 03:12?"
+    python -m razorguard.investigate --list-questions
+    python -m razorguard.investigate --days 2 "was the 20:05 rollback justified?"
 
 Runs the simulation, then hands the resulting audit ledger and observation
 stream to an agent that can query them. The agent decides what to look at; it
@@ -57,7 +57,7 @@ def wrap(text: str, width: int = 76) -> List[str]:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="revenueguard.investigate")
+    ap = argparse.ArgumentParser(prog="razorguard.investigate")
     ap.add_argument("question", nargs="*", help="what to ask")
     ap.add_argument("--days", type=int, default=2)
     ap.add_argument("--seed", type=int, default=7)

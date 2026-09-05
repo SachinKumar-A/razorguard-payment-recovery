@@ -1,7 +1,7 @@
 """Compare the deterministic note against the LLM one, side by side.
 
-    python -m revenueguard.narrate                 # template only
-    python -m revenueguard.narrate --claude        # both, if a key resolves
+    python -m razorguard.narrate                 # template only
+    python -m razorguard.narrate --claude        # both, if a key resolves
 
 Runs a short simulation, captures the attributions the control plane produced,
 and renders each one twice. The point of showing both is that the *facts* are
@@ -49,7 +49,7 @@ def collect(days: int, seed: int, limit: int) -> List[Tuple[int, RootCause, floa
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="revenueguard.narrate")
+    ap = argparse.ArgumentParser(prog="razorguard.narrate")
     ap.add_argument("--days", type=int, default=1)
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--limit", type=int, default=4)

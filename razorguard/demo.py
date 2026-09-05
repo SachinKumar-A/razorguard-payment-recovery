@@ -5,9 +5,9 @@ did you move that money, and how do you know it worked?* Everything printed
 here is read back out of the audit ledger and the observation stream -- nothing
 is composed for the demo.
 
-    python -m revenueguard.demo
-    python -m revenueguard.demo --incident INC-0-01
-    python -m revenueguard.demo --list
+    python -m razorguard.demo
+    python -m razorguard.demo --incident INC-0-01
+    python -m razorguard.demo --list
 """
 from __future__ import annotations
 
@@ -115,7 +115,7 @@ def replay(out: RunOutcome, inc: Incident, pre: int = 12, post: int = 45) -> Non
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="revenueguard.demo")
+    ap = argparse.ArgumentParser(prog="razorguard.demo")
     ap.add_argument("--days", type=int, default=2)
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--incident", type=str, default=None)

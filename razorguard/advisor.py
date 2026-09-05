@@ -57,10 +57,10 @@ ACTIONS = {
                              "what is missing.",
 }
 
-SYSTEM = """You advise an on-call payments engineer when RevenueGuard's routing
+SYSTEM = """You advise an on-call payments engineer when RazorGuard's routing
 policy has refused to act and escalated.
 
-RevenueGuard shifts payment traffic between gateways when a slice degrades. Its
+RazorGuard shifts payment traffic between gateways when a slice degrades. Its
 policy engine has hard bounds, and when one fires it refuses and escalates. It
 is correct to refuse - your job is not to overrule it. Your job is to work out
 what the human should do instead.
@@ -171,7 +171,7 @@ class Advisor:
             return self._fallback(escalation)
 
         prompt = (
-            f"RevenueGuard escalated at minute {escalation.minute}.\n\n"
+            f"RazorGuard escalated at minute {escalation.minute}.\n\n"
             f"Subject: {escalation.subject}\n"
             f"Rule that refused: {escalation.rule}\n"
             f"What it said: {escalation.summary}\n\n"

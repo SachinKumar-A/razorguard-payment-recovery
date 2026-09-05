@@ -13,19 +13,19 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 
-import revenueguard.investigator as inv
-from revenueguard.audit import AuditLedger
-from revenueguard.config import WorldConfig
-from revenueguard.control_plane import ControlPlane
-from revenueguard.detectors import default_detector
-from revenueguard.investigator import (Evidence, Investigator,
-                                       READ_ONLY_TOOLS, evidence_from_run)
-from revenueguard.policy import PolicyConfig, PolicyEngine
-from revenueguard.scenarios import default_incident_plan
-from revenueguard.simulator import Observation
-from revenueguard.world import World
+import razorguard.investigator as inv
+from razorguard.audit import AuditLedger
+from razorguard.config import WorldConfig
+from razorguard.control_plane import ControlPlane
+from razorguard.detectors import default_detector
+from razorguard.investigator import (Evidence, Investigator,
+                                     READ_ONLY_TOOLS, evidence_from_run)
+from razorguard.policy import PolicyConfig, PolicyEngine
+from razorguard.scenarios import default_incident_plan
+from razorguard.simulator import Observation
+from razorguard.world import World
 
-PKG = pathlib.Path(__file__).resolve().parent.parent / "revenueguard"
+PKG = pathlib.Path(__file__).resolve().parent.parent / "razorguard"
 
 
 @pytest.fixture(scope="module")

@@ -7,8 +7,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 
-from revenueguard.security import (CLOCK_SKEW_SECONDS, AuthConfig, AuthError,
-                                   sign, verify)
+from razorguard.security import (CLOCK_SKEW_SECONDS, AuthConfig, AuthError,
+                                 sign, verify)
 
 BODY = b'{"outcomes":[]}'
 
@@ -25,25 +25,25 @@ def ok(config, **kw):
 
 def test_missing_configuration_refuses_to_start(monkeypatch):
     """Open must be the thing you opt into, not the thing you forget."""
-    for var in ("REVENUEGUARD_TOKEN", "REVENUEGUARD_HMAC_KEY",
-                "REVENUEGUARD_ALLOW_INSECURE"):
+    for var in ("RAZORGUARD_TOKEN", "RAZORGUARD_HMAC_KEY",
+                "RAZORGUARD_ALLOW_INSECURE"):
         monkeypatch.delenv(var, raising=False)
     with pytest.raises(RuntimeError, match="no credential configured"):
         AuthConfig.from_env()
 
 
 def test_insecure_requires_an_explicit_opt_in(monkeypatch):
-    for var in ("REVENUEGUARD_TOKEN", "REVENUEGUARD_HMAC_KEY"):
+    for var in ("RAZORGUARD_TOKEN", "RAZORGUARD_HMAC_KEY"):
         monkeypatch.delenv(var, raising=False)
-    monkeypatch.setenv("REVENUEGUARD_ALLOW_INSECURE", "1")
+    monkeypatch.setenv("RAZORGUARD_ALLOW_INSECURE", "1")
     config = AuthConfig.from_env()
     assert config.mode == "insecure"
     assert config.enforced is False
 
 
 def test_hmac_is_preferred_when_both_are_set(monkeypatch):
-    monkeypatch.setenv("REVENUEGUARD_TOKEN", "t")
-    monkeypatch.setenv("REVENUEGUARD_HMAC_KEY", "k")
+    monkeypatch.setenv("RAZORGUARD_TOKEN", "t")
+    monkeypatch.setenv("RAZORGUARD_HMAC_KEY", "k")
     assert AuthConfig.from_env().mode == "hmac"
 
 
@@ -104,7 +104,7 @@ def test_hmac_rejects_a_wrong_key():
 
 def test_hmac_rejects_missing_headers_and_junk_timestamps():
     config = AuthConfig("hmac", "key")
-    with pytest.raises(AuthError, match="missing X-RevenueGuard"):
+    with pytest.raises(AuthError, match="missing X-RazorGuard"):
         ok(config, timestamp=None, signature="abc")
     with pytest.raises(AuthError, match="not a unix time"):
         ok(config, timestamp="yesterday", signature="abc")

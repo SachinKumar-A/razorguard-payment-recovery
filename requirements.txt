@@ -9,5 +9,5 @@ altair>=5.0
 
 # Optional integrations. The repository runs fully without either; each is
 # needed only for the one command named beside it.
-#   pip install razorpay     ->  python -m revenueguard.execute --live
-#   pip install anthropic    ->  python -m revenueguard.narrate --claude
+#   pip install razorpay     ->  python -m razorguard.execute --live
+#   pip install anthropic    ->  python -m razorguard.narrate --claude

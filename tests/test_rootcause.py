@@ -4,8 +4,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from revenueguard.config import GATEWAYS, ISSUERS, METHODS
-from revenueguard.rootcause import attribute
+from razorguard.config import GATEWAYS, ISSUERS, METHODS
+from razorguard.rootcause import attribute
 
 ALL = [f"{g}|{m}|{i}" for g in GATEWAYS for m in METHODS for i in ISSUERS]
 

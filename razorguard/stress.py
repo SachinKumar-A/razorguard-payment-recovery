@@ -23,8 +23,8 @@ fewer rollbacks and under half the congestion cost.
 Re-run this after any change to the capacity model. This curve is what sets that
 constant, and a different congestion shape would move it.
 
-    python -m revenueguard.stress --days 2
-    python -m revenueguard.stress --days 2 --json bench/results/stress.json
+    python -m razorguard.stress --days 2
+    python -m razorguard.stress --days 2 --json bench/results/stress.json
 
 Each row is a full paired control/treatment run at one setting, so the recovery
 figures are comparable with `experiment.py` and with each other.
@@ -91,7 +91,7 @@ def run_setting(args) -> Dict[str, float]:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="revenueguard.stress")
+    ap = argparse.ArgumentParser(prog="razorguard.stress")
     ap.add_argument("--days", type=int, default=2)
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--workers", type=int,

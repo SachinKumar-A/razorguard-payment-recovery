@@ -1,6 +1,6 @@
 """HTTP service: the control plane against a live stream, with state that survives.
 
-    uvicorn revenueguard.service:app --host 0.0.0.0 --port 8000
+    uvicorn razorguard.service:app --host 0.0.0.0 --port 8000
 
 What this is
 ------------
@@ -49,21 +49,21 @@ from .persistence import Lease, Store, checkpoint
 from .policy import PolicyConfig, PolicyEngine
 from .security import AuthConfig, AuthError, verify
 
-TICK_SECONDS = float(os.environ.get("REVENUEGUARD_TICK_SECONDS", "60"))
-STATE_PATH = os.environ.get("REVENUEGUARD_STATE", "state/revenueguard.db")
+TICK_SECONDS = float(os.environ.get("RAZORGUARD_TICK_SECONDS", "60"))
+STATE_PATH = os.environ.get("RAZORGUARD_STATE", "state/razorguard.db")
 #: Replay a little more than the health tracker holds, so a restart restores a
 #: full baseline window rather than a partial one.
-WARM_MINUTES = int(os.environ.get("REVENUEGUARD_WARM_MINUTES",
+WARM_MINUTES = int(os.environ.get("RAZORGUARD_WARM_MINUTES",
                                   str(HISTORY_MIN + 40)))
 #: A lease must outlive several ticks, or a slow minute looks like a dead node.
-LEASE_TTL = float(os.environ.get("REVENUEGUARD_LEASE_TTL",
+LEASE_TTL = float(os.environ.get("RAZORGUARD_LEASE_TTL",
                                  str(max(90.0, TICK_SECONDS * 3))))
 
 logging.basicConfig(
-    level=os.environ.get("REVENUEGUARD_LOG_LEVEL", "INFO"),
+    level=os.environ.get("RAZORGUARD_LOG_LEVEL", "INFO"),
     format='{"ts":"%(asctime)s","level":"%(levelname)s",'
            '"logger":"%(name)s","msg":"%(message)s"}')
-log = logging.getLogger("revenueguard")
+log = logging.getLogger("razorguard")
 
 
 def _ticket_for(method: str) -> float:
@@ -180,7 +180,7 @@ class Engine:
 
     def _push_recommendations(self) -> None:
         recs = recommendations_from(self.plane.routing, self.minute,
-                                    reason="revenueguard recommendation")
+                                    reason="razorguard recommendation")
         changed, skipped = self.changes.changed(recs)
         if not changed:
             return
@@ -268,7 +268,7 @@ async def lifespan(app: FastAPI):
         engine.close()
 
 
-app = FastAPI(title="RevenueGuard", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="RazorGuard", version="1.0.0", lifespan=lifespan)
 
 
 def _engine() -> Engine:
@@ -301,8 +301,8 @@ async def ingest(body: IngestIn, request: Request) -> Dict[str, object]:
     e = _engine()
     try:
         verify(e.auth, request.headers.get("authorization"),
-               request.headers.get("x-revenueguard-timestamp"),
-               request.headers.get("x-revenueguard-signature"),
+               request.headers.get("x-razorguard-timestamp"),
+               request.headers.get("x-razorguard-signature"),
                await request.body())
     except AuthError as exc:
         raise HTTPException(status_code=401, detail=str(exc))
@@ -406,37 +406,37 @@ def metrics() -> str:
     o = e.outcome
     a = e.alerter.stats()
     rows = [
-        ("revenueguard_minute", "counter", "Control-plane minute counter.",
+        ("razorguard_minute", "counter", "Control-plane minute counter.",
          e.minute),
-        ("revenueguard_actions_total", "counter", "Routing actions taken.",
+        ("razorguard_actions_total", "counter", "Routing actions taken.",
          o.actions),
-        ("revenueguard_rollbacks_total", "counter", "Diversions reverted.",
+        ("razorguard_rollbacks_total", "counter", "Diversions reverted.",
          o.rollbacks),
-        ("revenueguard_escalations_total", "counter",
+        ("razorguard_escalations_total", "counter",
          "Decisions handed to a human.", o.escalated),
-        ("revenueguard_blocked_total", "counter",
+        ("razorguard_blocked_total", "counter",
          "Proposals refused by policy.", o.blocked),
-        ("revenueguard_open_diversions", "gauge",
+        ("razorguard_open_diversions", "gauge",
          "Keys currently away from baseline.", len(e.plane.diversions)),
-        ("revenueguard_ingest_dropped_late_total", "counter",
+        ("razorguard_ingest_dropped_late_total", "counter",
          "Outcomes posted for a minute already processed.",
          e.source.dropped_late),
-        ("revenueguard_tick_errors_total", "counter", "Ticks that raised.",
+        ("razorguard_tick_errors_total", "counter", "Ticks that raised.",
          e.tick_errors),
-        ("revenueguard_tick_duration_ms", "gauge",
+        ("razorguard_tick_duration_ms", "gauge",
          "Duration of the last tick.", round(e.last_tick_ms, 2)),
-        ("revenueguard_alerts_failed_total", "counter",
+        ("razorguard_alerts_failed_total", "counter",
          "Webhook deliveries that failed.", a["failed"]),
-        ("revenueguard_is_active", "gauge",
+        ("razorguard_is_active", "gauge",
          "1 if this instance holds the lease.",
          1 if e.lease.is_active else 0),
-        ("revenueguard_efficacy_breaker_open", "gauge",
+        ("razorguard_efficacy_breaker_open", "gauge",
          "1 while shifting is halted for not helping.",
          1 if e.plane.breaker_open else 0),
-        ("revenueguard_efficacy_breaker_trips_total", "counter",
+        ("razorguard_efficacy_breaker_trips_total", "counter",
          "Times the strategy was judged to be doing harm.",
          e.plane.breaker_trips),
-        ("revenueguard_recommendations_applied_total", "counter",
+        ("razorguard_recommendations_applied_total", "counter",
          "Routing changes delivered downstream.", e.applied),
     ]
     out = []

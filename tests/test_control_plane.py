@@ -11,13 +11,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 
-from revenueguard.config import ISSUERS, METHODS, WorldConfig
-from revenueguard.control_plane import ControlPlane
-from revenueguard.detectors import PosteriorDropDetector
-from revenueguard.policy import Decision, PolicyConfig, PolicyEngine
-from revenueguard.routing import CANARY_FLOOR, RoutingTable
-from revenueguard.scenarios import default_incident_plan
-from revenueguard.world import World
+from razorguard.config import ISSUERS, METHODS, WorldConfig
+from razorguard.control_plane import ControlPlane
+from razorguard.detectors import PosteriorDropDetector
+from razorguard.policy import Decision, PolicyConfig, PolicyEngine
+from razorguard.routing import CANARY_FLOOR, RoutingTable
+from razorguard.scenarios import default_incident_plan
+from razorguard.world import World
 
 MINUTES = 1440  # one simulated day
 

@@ -28,7 +28,7 @@ def complete_doc(f: Facts) -> List:
 
     A(P("1. Executive summary", "h1"))
     A(P(
-        "RevenueGuard is a control plane for payment reliability. It watches "
+        "RazorGuard is a control plane for payment reliability. It watches "
         "payment success rates at the finest grain that matters &mdash; one "
         "gateway, one payment method, one issuing bank &mdash; detects when a "
         "slice degrades, works out what the failing slices have in common, "
@@ -89,7 +89,7 @@ def complete_doc(f: Facts) -> List:
         "a batch, with compliant escalation, stopping rules, and an audit "
         "trail.\"</i> This project is built against that sentence."))
 
-    A(P("3. What RevenueGuard does", "h1"))
+    A(P("3. What RazorGuard does", "h1"))
     A(P(
         "It runs a loop, once a minute, over live payment outcomes. Each pass "
         "does seven things."))
@@ -857,13 +857,13 @@ def complete_doc(f: Facts) -> List:
     A(P("16. Running it", "h1"))
     A(code(
         "pip install -r requirements.txt\n\n"
-        "python -m revenueguard.validate   --seeds 8 --days 2   # headline, with a CI\n"
-        "python -m revenueguard.experiment --days 2             # one seed, in detail\n"
-        "python -m revenueguard.demo                            # replay an incident\n"
-        "python -m revenueguard.bench      --days 2             # detector head-to-head\n"
-        "python -m revenueguard.sweep      --budget 1.0         # matched false-alarm curve\n"
-        "python -m revenueguard.narrate    --claude             # LLM note vs template\n"
-        "python -m revenueguard.execute    --limit 6            # Razorpay test mode, dry run\n"
+        "python -m razorguard.validate   --seeds 8 --days 2   # headline, with a CI\n"
+        "python -m razorguard.experiment --days 2             # one seed, in detail\n"
+        "python -m razorguard.demo                            # replay an incident\n"
+        "python -m razorguard.bench      --days 2             # detector head-to-head\n"
+        "python -m razorguard.sweep      --budget 1.0         # matched false-alarm curve\n"
+        "python -m razorguard.narrate    --claude             # LLM note vs template\n"
+        "python -m razorguard.execute    --limit 6            # Razorpay test mode, dry run\n"
         "streamlit run app.py                                   # operator console\n\n"
         "pytest -q                                              # 202 property tests"))
     A(P(
@@ -1162,7 +1162,7 @@ def summary_doc(f: Facts) -> List:
     A(table(roadmap_rows()[:5], [30, 165, 300]))
     A(Spacer(1, 8))
     A(P("Full detail in the companion document, "
-        "<i>RevenueGuard &mdash; Complete Project Documentation</i>.", "small"))
+        "<i>RazorGuard &mdash; Complete Project Documentation</i>.", "small"))
     return st
 
 
@@ -1171,11 +1171,11 @@ def summary_doc(f: Facts) -> List:
 def main() -> int:
     f = Facts()
 
-    doc1 = Doc(os.path.join(OUT, "RevenueGuard-Complete-Documentation.pdf"),
-               "RevenueGuard - Complete Project Documentation",
+    doc1 = Doc(os.path.join(OUT, "RazorGuard-Complete-Documentation.pdf"),
+               "RazorGuard - Complete Project Documentation",
                "Complete Project Documentation")
     doc1.build(cover(
-        "RevenueGuard",
+        "RazorGuard",
         "Detect payment degradation, route around it, prove what it recovered.",
         "Complete project documentation: the problem, what the system does, the "
         "technical approach and the reasoning behind each decision, the "
@@ -1183,11 +1183,11 @@ def main() -> int:
         "deliberately not claimed.", f) + complete_doc(f))
     print(f"wrote {doc1.filename}")
 
-    doc2 = Doc(os.path.join(OUT, "RevenueGuard-Summary-and-Workflow.pdf"),
-               "RevenueGuard - Summary and Workflow",
+    doc2 = Doc(os.path.join(OUT, "RazorGuard-Summary-and-Workflow.pdf"),
+               "RazorGuard - Summary and Workflow",
                "Summary and Workflow")
     doc2.build(cover(
-        "RevenueGuard",
+        "RazorGuard",
         "Summary, technical statement and workflow.",
         "A short read: the problem in a paragraph, the technical statement in "
         "one sentence, the seven-stage control loop, how the recovery figure is "

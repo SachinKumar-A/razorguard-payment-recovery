@@ -1,6 +1,6 @@
 """The last mile: handing a recommendation to something that can act on it.
 
-RevenueGuard cannot change acquirer routing inside Razorpay - that is
+RazorGuard cannot change acquirer routing inside Razorpay - that is
 Razorpay's own product, not a third-party endpoint, and nothing here pretends
 otherwise. What it *can* do is finish its own loop: deliver each recommendation
 to a system you nominate, in a form that system can consume, and record what
@@ -51,7 +51,7 @@ class Recommendation:
 
     def payload(self, mode: str) -> Dict[str, object]:
         return {
-            "source": "revenueguard",
+            "source": "razorguard",
             "mode": mode,
             "minute": self.minute,
             "method": self.method,
@@ -156,7 +156,7 @@ class FileApplier:
             return result
 
         document = {
-            "source": "revenueguard",
+            "source": "razorguard",
             "written_at": time.time(),
             "minute": recommendations[0].minute,
             "keys": {r.key: {g: round(w, 4) for g, w in r.weights.items()}
@@ -231,21 +231,21 @@ def recommendations_from(routing, minute: int,
 
 def build_from_env() -> RoutingApplier:
     """Configure from the environment. Defaults to publishing only."""
-    mode = os.environ.get("REVENUEGUARD_APPLY_MODE", "off").strip().lower()
+    mode = os.environ.get("RAZORGUARD_APPLY_MODE", "off").strip().lower()
     if mode == "off":
         return NullApplier()
 
-    path = os.environ.get("REVENUEGUARD_APPLY_FILE", "").strip()
+    path = os.environ.get("RAZORGUARD_APPLY_FILE", "").strip()
     if path:
         return FileApplier(path)
 
-    url = os.environ.get("REVENUEGUARD_APPLY_WEBHOOK", "").strip()
+    url = os.environ.get("RAZORGUARD_APPLY_WEBHOOK", "").strip()
     if url:
         return WebhookApplier(
             url, mode=mode if mode in ("notify", "auto") else "notify",
-            token=os.environ.get("REVENUEGUARD_APPLY_TOKEN") or None)
+            token=os.environ.get("RAZORGUARD_APPLY_TOKEN") or None)
 
     raise RuntimeError(
-        f"REVENUEGUARD_APPLY_MODE={mode} needs somewhere to send to. Set "
-        f"REVENUEGUARD_APPLY_WEBHOOK or REVENUEGUARD_APPLY_FILE, or leave the "
+        f"RAZORGUARD_APPLY_MODE={mode} needs somewhere to send to. Set "
+        f"RAZORGUARD_APPLY_WEBHOOK or RAZORGUARD_APPLY_FILE, or leave the "
         f"mode as 'off' to publish at GET /routing only.")

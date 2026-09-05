@@ -6,11 +6,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 
-from revenueguard.detectors import (FixedThresholdDetector,
-                                    PosteriorDropDetector, UnionDetector,
+from razorguard.detectors import (FixedThresholdDetector,
+                                  PosteriorDropDetector, UnionDetector,
                                     default_detector)
-from revenueguard.detectors.base import Alarm, Detector
-from revenueguard.simulator import Observation
+from razorguard.detectors.base import Alarm, Detector
+from razorguard.simulator import Observation
 
 
 class Never(Detector):

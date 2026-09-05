@@ -4,15 +4,15 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from revenueguard.audit import AuditLedger
-from revenueguard.config import ISSUERS, METHODS
-from revenueguard.control_plane import ControlPlane, RunOutcome
-from revenueguard.detectors import default_detector
-from revenueguard.ingest import BufferedSource
-from revenueguard.persistence import Store, checkpoint
-from revenueguard.policy import PolicyConfig, PolicyEngine
-from revenueguard.routing import RoutingTable
-from revenueguard.simulator import Observation
+from razorguard.audit import AuditLedger
+from razorguard.config import ISSUERS, METHODS
+from razorguard.control_plane import ControlPlane, RunOutcome
+from razorguard.detectors import default_detector
+from razorguard.ingest import BufferedSource
+from razorguard.persistence import Store, checkpoint
+from razorguard.policy import PolicyConfig, PolicyEngine
+from razorguard.routing import RoutingTable
+from razorguard.simulator import Observation
 
 
 def obs(minute, key="gw_alpha|upi|hdfc", attempts=100, successes=90):
@@ -132,7 +132,7 @@ def test_diversions_round_trip_so_something_still_watches_them(tmp_path):
     plane = ControlPlane(None, default_detector(),
                          policy=PolicyEngine(PolicyConfig()),
                          enable_routing=True, source=src)
-    from revenueguard.control_plane import Diversion
+    from razorguard.control_plane import Diversion
     plane.diversions[("upi", "hdfc")] = Diversion(
         method="upi", issuer="hdfc", source="gw_beta", target="gw_alpha",
         opened_min=42, shifted=0.256, healthy_streak=3, restoring=True)
@@ -150,7 +150,7 @@ def test_diversions_round_trip_so_something_still_watches_them(tmp_path):
 
 def test_saving_diversions_replaces_rather_than_accumulates(tmp_path):
     s = store(tmp_path)
-    from revenueguard.control_plane import Diversion
+    from razorguard.control_plane import Diversion
     one = {("upi", "hdfc"): Diversion("upi", "hdfc", "gw_beta", "gw_alpha",
                                       1, 0.1)}
     s.save_diversions(one)

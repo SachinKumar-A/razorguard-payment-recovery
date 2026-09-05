@@ -1,5 +1,5 @@
 -r requirements.txt
 
-# HTTP service (uvicorn revenueguard.service:app)
+# HTTP service (uvicorn razorguard.service:app)
 fastapi>=0.110
 uvicorn[standard]>=0.27

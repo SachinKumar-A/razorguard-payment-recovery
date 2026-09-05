@@ -18,8 +18,8 @@ git clone <your-repo-url> && cd razorpay
 pip install -r requirements-dev.txt
 
 pytest -q                                    # expect: 202 passed
-python -m revenueguard.validate --seeds 8 --days 2
-python -m revenueguard.experiment --days 2
+python -m razorguard.validate --seeds 8 --days 2
+python -m razorguard.experiment --days 2
 streamlit run app.py                         # expect: console loads
 ```
 
@@ -50,7 +50,7 @@ streamlit run app.py                         # expect: console loads
 
 > Payment failures are almost never global — they are narrow, one gateway on one
 > method for one issuing bank, and a narrow failure is invisible on the chart
-> everyone watches. RevenueGuard monitors at that grain, which means running
+> everyone watches. RazorGuard monitors at that grain, which means running
 > ~207,000 statistical tests over two days against slices thin enough that a
 > z-score is meaningless. It handles both problems by pooling: each slice's rate
 > is a Beta posterior shrunk toward its method's cohort.
@@ -73,7 +73,7 @@ streamlit run app.py                         # expect: console loads
 > when they stop paying.
 
 **Repo:** `<your-repo-url>` · **Video:** `<your-video-url>`
-**Architecture:** `docs/RevenueGuard-Complete-Documentation.pdf` (sections 8–9),
+**Architecture:** `docs/RazorGuard-Complete-Documentation.pdf` (sections 8–9),
 or the README.
 
 ---
@@ -92,7 +92,7 @@ Screen recording with voice. No slides. Every command below is real and runs.
 **0:30–1:45 — watch it happen**
 
 ```bash
-python -m revenueguard.demo --incident INC-0-01
+python -m razorguard.demo --incident INC-0-01
 ```
 
 Talk over the trace as it scrolls. Point at, in order: the detection line and
@@ -107,7 +107,7 @@ separates this from a dashboard.
 **1:45–2:45 — the measurement, and why it can be trusted**
 
 ```bash
-python -m revenueguard.experiment --days 2
+python -m razorguard.experiment --days 2
 ```
 
 > "The number is a difference between two runs of identical demand — routing off
@@ -123,7 +123,7 @@ Then the honest bit:
 **2:45–3:30 — the validated headline**
 
 ```bash
-python -m revenueguard.validate --seeds 8 --days 2
+python -m razorguard.validate --seeds 8 --days 2
 ```
 
 > "One seed can't tell a real effect from a lucky roll. Eight paired seeds:
@@ -133,7 +133,7 @@ python -m revenueguard.validate --seeds 8 --days 2
 **3:30–4:20 — the finding that changed the code**
 
 ```bash
-python -m revenueguard.stress --days 2
+python -m razorguard.stress --days 2
 ```
 
 > "I set the shift cap at 40% as the cautious choice and wrote a paragraph
@@ -146,7 +146,7 @@ python -m revenueguard.stress --days 2
 Then the one that matters more:
 
 ```bash
-python -m revenueguard.sensitivity --days 2
+python -m razorguard.sensitivity --days 2
 ```
 
 > "Then I asked whether that 80% depends on a curve I guessed. It mostly
@@ -181,7 +181,7 @@ curl localhost:8000/routing
 **4:40–5:00 — where AI sits, and close**
 
 ```bash
-python -m revenueguard.investigate "why did traffic move off gw_beta at 03:12, and did it help?"
+python -m razorguard.investigate "why did traffic move off gw_beta at 03:12, and did it help?"
 ```
 
 > "And this is where a model earns its place. It gets four read-only tools over
@@ -266,6 +266,6 @@ incident mix would widen the interval honestly.
 
 - [ ] `LICENSE` present (MIT)
 - [ ] `.env.example` shows the two optional keys; **no real key committed**
-- [ ] `pyflakes revenueguard app.py tests docs` is silent
+- [ ] `pyflakes razorguard app.py tests docs` is silent
 - [ ] commit history reads as steady work, not one dump
 - [ ] README opens with the validated number, not with setup instructions

@@ -1,6 +1,6 @@
 """Run the benchmark.
 
-    python -m revenueguard.bench --days 2 --json bench/results/latest.json
+    python -m razorguard.bench --days 2 --json bench/results/latest.json
 
 Runs every detector over identical traffic and the identical incident plan, so
 the comparison is like-for-like. The fixed-threshold detector is not a strawman
@@ -40,7 +40,7 @@ def fmt(v, suffix="", dash="--"):
 def print_report(results: List[BenchResult]) -> None:
     w = 78
     print("=" * w)
-    print("RevenueGuard -- degradation detection benchmark")
+    print("RazorGuard -- degradation detection benchmark")
     print("=" * w)
     r0 = results[0]
     print(f"  window            {r0.minutes} min ({r0.minutes/1440:g} days)")
@@ -91,7 +91,7 @@ def print_report(results: List[BenchResult]) -> None:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="revenueguard.bench")
+    ap = argparse.ArgumentParser(prog="razorguard.bench")
     ap.add_argument("--days", type=int, default=2)
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--json", type=str, default=None)

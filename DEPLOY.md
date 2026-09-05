@@ -1,4 +1,4 @@
-# Deploying RevenueGuard
+# Deploying RazorGuard
 
 **What is deployable today:** the control plane runs as a container, consumes
 real payment outcomes over an authenticated endpoint, keeps durable state that
@@ -6,7 +6,7 @@ survives a restart, delivers escalations to a webhook, exposes Prometheus
 metrics, and emits routing recommendations with a full audit trail.
 
 **What it does not do:** apply its own decisions. Acquirer selection is not an
-endpoint a third party can call, so RevenueGuard emits recommendations and
+endpoint a third party can call, so RazorGuard emits recommendations and
 something on your side acts on them. Also, the numbers in the README come from a
 simulator; pointing this at production tells you what it detects *there*, which
 is not a thing this repository can claim in advance.
@@ -16,7 +16,7 @@ is not a thing this repository can claim in advance.
 ## Run it
 
 ```bash
-cp .env.example .env          # set REVENUEGUARD_HMAC_KEY
+cp .env.example .env          # set RAZORGUARD_HMAC_KEY
 docker compose up --build
 ```
 
@@ -27,12 +27,12 @@ Without Docker:
 
 ```bash
 pip install -r requirements-service.txt
-export REVENUEGUARD_HMAC_KEY=$(python -c "import secrets;print(secrets.token_hex(32))")
-uvicorn revenueguard.service:app --host 0.0.0.0 --port 8000
+export RAZORGUARD_HMAC_KEY=$(python -c "import secrets;print(secrets.token_hex(32))")
+uvicorn razorguard.service:app --host 0.0.0.0 --port 8000
 ```
 
 The service **refuses to start without a credential**. Open is something you opt
-into (`REVENUEGUARD_ALLOW_INSECURE=1`), not something you forget — the safe
+into (`RAZORGUARD_ALLOW_INSECURE=1`), not something you forget — the safe
 configuration should not be the one you have to remember.
 
 ---
@@ -44,7 +44,7 @@ integration is small:
 
 ```bash
 curl -X POST localhost:8000/ingest \
-  -H "Authorization: Bearer $REVENUEGUARD_TOKEN" \
+  -H "Authorization: Bearer $RAZORGUARD_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"outcomes":[
         {"gateway":"gw_beta","method":"upi","issuer":"hdfc",
@@ -64,7 +64,7 @@ consumer, a scheduled query, or a webhook off existing monitoring.
 has already processed is counted in `dropped_late` and dropped. Folding it into
 the current minute would corrupt the trailing baseline the detector compares
 against, which is a subtle way to make every subsequent number wrong. Alert on
-`revenueguard_ingest_dropped_late_total`.
+`razorguard_ingest_dropped_late_total`.
 
 ### Signed requests (preferred)
 
@@ -75,10 +75,10 @@ body = json.dumps({"outcomes": [...]}).encode()
 ts = str(int(time.time()))
 sig = hmac.new(KEY.encode(), f"{ts}.".encode() + body, hashlib.sha256).hexdigest()
 
-requests.post("http://revenueguard:8000/ingest", data=body, headers={
+requests.post("http://razorguard:8000/ingest", data=body, headers={
     "Content-Type": "application/json",
-    "X-RevenueGuard-Timestamp": ts,
-    "X-RevenueGuard-Signature": sig,
+    "X-RazorGuard-Timestamp": ts,
+    "X-RazorGuard-Signature": sig,
 })
 ```
 
@@ -92,10 +92,10 @@ The fastest way to find out what this would have caught is to feed it a real
 past incident:
 
 ```python
-from revenueguard.config import METHOD_TICKET
-from revenueguard.control_plane import ControlPlane
-from revenueguard.detectors import default_detector
-from revenueguard.ingest import CsvSource
+from razorguard.config import METHOD_TICKET
+from razorguard.control_plane import ControlPlane
+from razorguard.detectors import default_detector
+from razorguard.ingest import CsvSource
 
 source = CsvSource("incident.csv", lambda m: METHOD_TICKET.get(m, 1000.0))
 plane = ControlPlane(None, default_detector(), source=source)
@@ -123,13 +123,13 @@ CSV columns: `minute, gateway, method, issuer, attempts, successes`.
 
 | condition | why |
 |---|---|
-| `revenueguard_tick_errors_total` rising | the loop is failing; it keeps going, which is why you must watch it |
-| `revenueguard_ingest_dropped_late_total` rising | a producer is behind; baselines are being starved |
-| `revenueguard_open_diversions` stuck for hours | something diverted and never healed |
-| `revenueguard_alerts_failed_total` rising | escalations are not reaching anyone |
-| `revenueguard_efficacy_breaker_open` = 1 | rerouting is not helping; read the ledger before re-enabling |
-| `revenueguard_is_active` = 0 everywhere | no instance holds the lease; nothing is deciding |
-| `revenueguard_minute` flat | the tick loop has stopped |
+| `razorguard_tick_errors_total` rising | the loop is failing; it keeps going, which is why you must watch it |
+| `razorguard_ingest_dropped_late_total` rising | a producer is behind; baselines are being starved |
+| `razorguard_open_diversions` stuck for hours | something diverted and never healed |
+| `razorguard_alerts_failed_total` rising | escalations are not reaching anyone |
+| `razorguard_efficacy_breaker_open` = 1 | rerouting is not helping; read the ledger before re-enabling |
+| `razorguard_is_active` = 0 everywhere | no instance holds the lease; nothing is deciding |
+| `razorguard_minute` flat | the tick loop has stopped |
 
 ---
 
@@ -210,7 +210,7 @@ hard on a saturated one — and costs about 0.5% of the headline as insurance.
 **It limits the damage; it does not remove it.** If your acquirers run close to
 saturation, this system is not worth deploying, and the way to find out before
 you deploy is to replay a historical incident through `CsvSource` and look at
-`revenueguard_efficacy_breaker_trips_total`.
+`razorguard_efficacy_breaker_trips_total`.
 
 Still open, honestly:
 
@@ -235,19 +235,19 @@ Still open, honestly:
 
 | variable | default | meaning |
 |---|---|---|
-| `REVENUEGUARD_HMAC_KEY` | — | Request-signing secret. Preferred. |
-| `REVENUEGUARD_TOKEN` | — | Shared bearer token. Used if no HMAC key. |
-| `REVENUEGUARD_ALLOW_INSECURE` | — | `1` to run with no auth. Private networks only. |
-| `REVENUEGUARD_STATE` | `state/revenueguard.db` | SQLite path. `/data/...` in the image. |
-| `REVENUEGUARD_TICK_SECONDS` | `60` | Seconds per tick. Detector windows are counted in ticks, so lowering it for a demo compresses baselines too. |
-| `REVENUEGUARD_WARM_MINUTES` | `220` | History replayed on boot. |
-| `REVENUEGUARD_ALERT_WEBHOOK` | — | Where escalations go. Unset disables alerting. |
-| `REVENUEGUARD_LOG_LEVEL` | `INFO` | |
-| `REVENUEGUARD_APPLY_MODE` | `off` | `off` publishes at `/routing` only; `notify` sends changes framed as proposals; `auto` sends them as instructions. Identical payloads — the difference is who reads them. |
-| `REVENUEGUARD_APPLY_WEBHOOK` | — | Where recommendations go. |
-| `REVENUEGUARD_APPLY_FILE` | — | Alternative: a config file, written atomically. |
-| `REVENUEGUARD_LEASE_TTL` | `3 × tick` | How long before a silent holder is presumed dead. |
+| `RAZORGUARD_HMAC_KEY` | — | Request-signing secret. Preferred. |
+| `RAZORGUARD_TOKEN` | — | Shared bearer token. Used if no HMAC key. |
+| `RAZORGUARD_ALLOW_INSECURE` | — | `1` to run with no auth. Private networks only. |
+| `RAZORGUARD_STATE` | `state/razorguard.db` | SQLite path. `/data/...` in the image. |
+| `RAZORGUARD_TICK_SECONDS` | `60` | Seconds per tick. Detector windows are counted in ticks, so lowering it for a demo compresses baselines too. |
+| `RAZORGUARD_WARM_MINUTES` | `220` | History replayed on boot. |
+| `RAZORGUARD_ALERT_WEBHOOK` | — | Where escalations go. Unset disables alerting. |
+| `RAZORGUARD_LOG_LEVEL` | `INFO` | |
+| `RAZORGUARD_APPLY_MODE` | `off` | `off` publishes at `/routing` only; `notify` sends changes framed as proposals; `auto` sends them as instructions. Identical payloads — the difference is who reads them. |
+| `RAZORGUARD_APPLY_WEBHOOK` | — | Where recommendations go. |
+| `RAZORGUARD_APPLY_FILE` | — | Alternative: a config file, written atomically. |
+| `RAZORGUARD_LEASE_TTL` | `3 × tick` | How long before a silent holder is presumed dead. |
 
-Policy bounds live in `PolicyConfig` (`revenueguard/policy.py`), not in
+Policy bounds live in `PolicyConfig` (`razorguard/policy.py`), not in
 environment variables, on purpose: changing one should be a reviewed commit with
 the sweep that justifies it, not a restart with a different value.

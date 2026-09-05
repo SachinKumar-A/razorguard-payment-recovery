@@ -1,23 +1,23 @@
 services:
-  revenueguard:
+  razorguard:
     build: .
-    image: revenueguard:latest
+    image: razorguard:latest
     ports:
       - "8000:8000"
     volumes:
       # State must outlive the container. Without this a redeploy is a blind
       # spot while baselines refill.
-      - revenueguard-state:/data
+      - razorguard-state:/data
     environment:
       # One tick per minute in production. The detector's windows are counted
       # in ticks, so lowering this for a demo compresses its baselines too.
-      REVENUEGUARD_TICK_SECONDS: "60"
+      RAZORGUARD_TICK_SECONDS: "60"
       # Authentication is required. Set one of these; the service refuses to
       # start otherwise, which is the correct default for an endpoint that
       # steers money decisions.
-      REVENUEGUARD_HMAC_KEY: "${REVENUEGUARD_HMAC_KEY:?set REVENUEGUARD_HMAC_KEY or REVENUEGUARD_TOKEN in .env}"
-      REVENUEGUARD_ALERT_WEBHOOK: "${REVENUEGUARD_ALERT_WEBHOOK:-}"
-      REVENUEGUARD_LOG_LEVEL: "INFO"
+      RAZORGUARD_HMAC_KEY: "${RAZORGUARD_HMAC_KEY:?set RAZORGUARD_HMAC_KEY or RAZORGUARD_TOKEN in .env}"
+      RAZORGUARD_ALERT_WEBHOOK: "${RAZORGUARD_ALERT_WEBHOOK:-}"
+      RAZORGUARD_LOG_LEVEL: "INFO"
     restart: unless-stopped
     # Single replica by design - see the Dockerfile CMD.
     deploy:
@@ -25,7 +25,7 @@ services:
 
   console:
     build: .
-    image: revenueguard:latest
+    image: razorguard:latest
     command: >
       streamlit run app.py
       --server.port 8501
@@ -36,4 +36,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  revenueguard-state:
+  razorguard-state:

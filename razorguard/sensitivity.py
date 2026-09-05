@@ -9,7 +9,7 @@ rests on a guess, and saying "we chose 80% by measurement" would be misleading.
 So: sweep the cap **against several curves at once** and see whether the answer
 is stable.
 
-    python -m revenueguard.sensitivity --days 2
+    python -m razorguard.sensitivity --days 2
 
 Three outcomes, and each is worth knowing:
 
@@ -90,7 +90,7 @@ def run_cell(args) -> Dict[str, object]:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="revenueguard.sensitivity")
+    ap = argparse.ArgumentParser(prog="razorguard.sensitivity")
     ap.add_argument("--days", type=int, default=2)
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--workers", type=int,

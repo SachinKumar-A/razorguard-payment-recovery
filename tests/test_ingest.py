@@ -6,13 +6,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 
-from revenueguard.config import METHOD_TICKET, WorldConfig
-from revenueguard.control_plane import ControlPlane
-from revenueguard.detectors import default_detector
-from revenueguard.ingest import BufferedSource, CsvSource, PaymentOutcome
-from revenueguard.policy import PolicyConfig, PolicyEngine
-from revenueguard.scenarios import default_incident_plan
-from revenueguard.world import World
+from razorguard.config import METHOD_TICKET, WorldConfig
+from razorguard.control_plane import ControlPlane
+from razorguard.detectors import default_detector
+from razorguard.ingest import BufferedSource, CsvSource, PaymentOutcome
+from razorguard.policy import PolicyConfig, PolicyEngine
+from razorguard.scenarios import default_incident_plan
+from razorguard.world import World
 
 
 def ticket(method):
@@ -146,7 +146,7 @@ def test_the_simulator_path_still_works_without_a_source():
 
 def test_tick_and_run_walk_the_same_path():
     """A service driving `tick` must not diverge from the benchmarked `run`."""
-    from revenueguard.control_plane import RunOutcome
+    from razorguard.control_plane import RunOutcome
 
     def build():
         return ControlPlane(World(WorldConfig(seed=7), default_incident_plan(1)),

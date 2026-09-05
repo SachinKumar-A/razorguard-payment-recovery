@@ -7,21 +7,21 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 
-from revenueguard.advisor import (ACTIONS, Advisor, Recommendation,
-                                  escalations_in)
-from revenueguard.audit import AuditLedger
-from revenueguard.config import WorldConfig
-from revenueguard.control_plane import ControlPlane
-from revenueguard.detectors import default_detector
-from revenueguard.economics import (fee_for, marginal_cost_of_shift,
-                                    net_recovery, processing_cost)
-from revenueguard.investigator import Evidence, evidence_from_run
-from revenueguard.policy import PolicyConfig, PolicyEngine
-from revenueguard.scenarios import default_incident_plan
-from revenueguard.simulator import Observation
-from revenueguard.world import World
+from razorguard.advisor import (ACTIONS, Advisor, Recommendation,
+                                escalations_in)
+from razorguard.audit import AuditLedger
+from razorguard.config import WorldConfig
+from razorguard.control_plane import ControlPlane
+from razorguard.detectors import default_detector
+from razorguard.economics import (fee_for, marginal_cost_of_shift,
+                                  net_recovery, processing_cost)
+from razorguard.investigator import Evidence, evidence_from_run
+from razorguard.policy import PolicyConfig, PolicyEngine
+from razorguard.scenarios import default_incident_plan
+from razorguard.simulator import Observation
+from razorguard.world import World
 
-PKG = pathlib.Path(__file__).resolve().parent.parent / "revenueguard"
+PKG = pathlib.Path(__file__).resolve().parent.parent / "razorguard"
 
 
 def obs(slice_key, attempts=100, successes=90, ticket=640.0, minute=0):

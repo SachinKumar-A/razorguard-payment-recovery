@@ -9,10 +9,10 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-from revenueguard.config import GATEWAYS, ISSUERS, METHODS
-from revenueguard.narrator import (ClaudeNarrator, TemplateNarrator, _facts,
-                                   build, describe)
-from revenueguard.rootcause import attribute
+from razorguard.config import GATEWAYS, ISSUERS, METHODS
+from razorguard.narrator import (ClaudeNarrator, TemplateNarrator, _facts,
+                                 build, describe)
+from razorguard.rootcause import attribute
 
 ALL = [f"{g}|{m}|{i}" for g in GATEWAYS for m in METHODS for i in ISSUERS]
 
@@ -138,7 +138,7 @@ def test_model_sees_only_computed_facts_never_raw_traffic():
 def test_narrator_module_cannot_reach_the_decision_path():
     """Structural: nothing in the decision path imports the narrator."""
     import pathlib
-    root = pathlib.Path(__file__).resolve().parent.parent / "revenueguard"
+    root = pathlib.Path(__file__).resolve().parent.parent / "razorguard"
     for name in ("policy.py", "routing.py", "control_plane.py", "audit.py"):
         src = (root / name).read_text(encoding="utf-8")
         assert "narrator" not in src, f"{name} must not import the narrator"

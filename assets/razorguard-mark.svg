@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96"
+     role="img" aria-label="RazorGuard mark">
+  <title>RazorGuard</title>
+  <desc>A shield with a payment route that meets a failure and is rerouted around
+        it. Original artwork; Razorpay's palette is referenced, their logo is not
+        reproduced.</desc>
+
+  <!-- No gradients and no clip paths, deliberately. Both are the first things
+       SVG-to-PDF converters drop, and a mark that renders as a black square in
+       the very document it heads is worse than one that never tried to be
+       clever. Depth comes from two solid shapes that share the shield's own
+       edges, and every stroke is drawn inside the silhouette rather than
+       clipped to it - so this renders identically in a browser, in a PDF, and
+       in a README thumbnail. -->
+
+  <!-- Shield, light face -->
+  <path d="M48 6 L86 20 V48c0 22-16 34-38 42C26 82 10 70 10 48V20Z"
+        fill="#3395FF"/>
+  <!-- Shield, shaded right face: traces the same outline, so no clip needed -->
+  <path d="M48 6 L86 20 V48c0 22-16 34-38 42Z" fill="#1B6FD1"/>
+
+  <!-- Two healthy routes, kept well inside the silhouette -->
+  <path d="M31 66 L40 44 L48 28" fill="none" stroke="#FFFFFF" stroke-opacity="0.32"
+        stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M65 66 L56 44 L48 28" fill="none" stroke="#FFFFFF" stroke-opacity="0.32"
+        stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- The third route fails, and is rerouted around the break -->
+  <path d="M48 72 L48 58" fill="none" stroke="#FFFFFF" stroke-opacity="0.55"
+        stroke-width="5" stroke-linecap="round"/>
+  <path d="M53 47 L63 37 M53 37 L63 47" fill="none" stroke="#FF4D57"
+        stroke-width="5" stroke-linecap="round"/>
+  <path d="M48 58 Q33 50 36 33" fill="none" stroke="#FFFFFF" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M30 39 L36 31 L42 39" fill="none" stroke="#FFFFFF" stroke-width="6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <path d="M48 6 L86 20 V48c0 22-16 34-38 42C26 82 10 70 10 48V20Z"
+        fill="none" stroke="#0D2366" stroke-opacity="0.28" stroke-width="2"/>
+</svg>

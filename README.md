@@ -1,11 +1,12 @@
-# RevenueGuard
+<img src="assets/razorguard-lockup.svg" alt="RazorGuard" height="64">
+
 
 **Detect payment degradation, route around it, prove what it recovered.**
 
 Razorpay AI Buildathon — Track 03, AI Revenue Recovery.
 
 A payment slice degrades — one issuer, on one method, through one gateway — and
-money bleeds out for as long as nobody notices. RevenueGuard notices, works out
+money bleeds out for as long as nobody notices. RazorGuard notices, works out
 what the failing slices have in common, moves traffic to a healthier gateway
 under an explicit written policy, verifies whether that helped, and rolls back
 when it did not. Every action *and every refusal* is written to an audit ledger.
@@ -24,7 +25,7 @@ where gateways get worse as you push traffic at them.
 money.**
 
 ```
-python -m revenueguard.validate --seeds 8 --days 2
+python -m razorguard.validate --seeds 8 --days 2
 ```
 
 | across 8 paired seeds | mean | sd | min | max |
@@ -40,7 +41,7 @@ of coin flips favoured the treatment arm", so the headline is the interval. The
 comparison is **paired** — control and treatment face bit-identical demand within
 each seed.
 
-One seed in detail (`python -m revenueguard.experiment`):
+One seed in detail (`python -m razorguard.experiment`):
 
 | | router off | router on | delta |
 |---|---:|---:|---:|
@@ -78,7 +79,7 @@ so shifting harder should congest the destination and stop paying. `stress.py`
 measured that and it was wrong.
 
 ```
-python -m revenueguard.stress --days 2
+python -m razorguard.stress --days 2
 ```
 
 | shift cap | recovered | of exposure | actions | rollbacks | peak u | congested |
@@ -125,7 +126,7 @@ four curves at once, from an acquirer with plenty of headroom to one that falls
 over early.
 
 ```
-python -m revenueguard.sensitivity --days 2
+python -m razorguard.sensitivity --days 2
 ```
 
 | curve | 20% | 40% | 60% | 80% | 100% |
@@ -192,16 +193,16 @@ same alarms; it simply may not act. Tests assert it takes zero routing actions.
 ```bash
 pip install -r requirements.txt        # or requirements-dev.txt to run the tests
 
-python -m revenueguard.validate   --seeds 8 --days 2   # the headline, with a CI
-python -m revenueguard.experiment --days 2             # one seed, in detail
-python -m revenueguard.stress     --days 2             # are the caps costing money?
-python -m revenueguard.demo                            # replay an incident
-python -m revenueguard.bench      --days 2             # detector head-to-head
-python -m revenueguard.sweep      --budget 1.0         # matched false-alarm curve
-python -m revenueguard.sensitivity --days 2            # does the cap depend on a guess?
-python -m revenueguard.narrate    --claude             # LLM note vs template
-python -m revenueguard.investigate "why did traffic move at 03:12?"
-python -m revenueguard.execute    --limit 6            # Razorpay test mode, dry run
+python -m razorguard.validate   --seeds 8 --days 2   # the headline, with a CI
+python -m razorguard.experiment --days 2             # one seed, in detail
+python -m razorguard.stress     --days 2             # are the caps costing money?
+python -m razorguard.demo                            # replay an incident
+python -m razorguard.bench      --days 2             # detector head-to-head
+python -m razorguard.sweep      --budget 1.0         # matched false-alarm curve
+python -m razorguard.sensitivity --days 2            # does the cap depend on a guess?
+python -m razorguard.narrate    --claude             # LLM note vs template
+python -m razorguard.investigate "why did traffic move at 03:12?"
+python -m razorguard.execute    --limit 6            # Razorpay test mode, dry run
 streamlit run app.py                                   # operator console
 
 docker compose up --build                              # service + console
@@ -258,7 +259,7 @@ reviewed, or defended.
 on-call engineer actually asks:
 
 ```bash
-python -m revenueguard.investigate "why did traffic move off gw_beta at 03:12, and did it help?"
+python -m razorguard.investigate "why did traffic move off gw_beta at 03:12, and did it help?"
 ```
 
 Claude gets four read-only tools over the run — search the audit ledger, pull
@@ -400,7 +401,7 @@ assert that refusal.
 
 ```
 app.py              operator console (streamlit)
-revenueguard/
+razorguard/
   config.py         the fleet: gateways, methods, issuers, volumes, tickets
   capacity.py       gateways degrade under load; the router's actions have a price
   scenarios.py      injected degradations - ground truth, unreadable by detectors
@@ -437,8 +438,13 @@ SUBMIT.md           submission checklist, video script, panel prep
 tests/              202 property tests
 ```
 
-`pyflakes` clean. No result value is hardcoded anywhere in `revenueguard/` —
+`pyflakes` clean. No result value is hardcoded anywhere in `razorguard/` —
 a test asserts it.
+
+**On the branding.** The mark, wordmark and console theme are original artwork.
+Razorpay's palette and design language are referenced deliberately — this is a
+submission to their buildathon and it should look like it belongs beside their
+product — but their logo is not reproduced anywhere in this repository.
 
 ---
 

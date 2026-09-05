@@ -28,14 +28,19 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESULTS = os.path.join(ROOT, "bench", "results")
 OUT = os.path.dirname(os.path.abspath(__file__))
 
-INK = colors.HexColor("#111827")
-MUTED = colors.HexColor("#6B7280")
-ACCENT = colors.HexColor("#0F766E")
-RULE = colors.HexColor("#D1D5DB")
-BOXBG = colors.HexColor("#F3F4F6")
-CODEBG = colors.HexColor("#F7F7F8")
-GOOD = colors.HexColor("#15803D")
+# Razorpay's palette. Referenced on purpose - this is a submission to their
+# buildathon and should look like it belongs beside their product - but the mark
+# below is original artwork and their logo is not reproduced.
+INK = colors.HexColor("#02042B")      # Razorpay navy
+MUTED = colors.HexColor("#5A6B8C")
+ACCENT = colors.HexColor("#3395FF")   # Razorpay blue
+ACCENT_DARK = colors.HexColor("#1B6FD1")
+RULE = colors.HexColor("#E3EAF5")
+BOXBG = colors.HexColor("#F4F7FC")
+CODEBG = colors.HexColor("#F7F9FD")
+GOOD = colors.HexColor("#0F9D58")
 WARN = colors.HexColor("#B45309")
+BAD = colors.HexColor("#FF4D57")
 
 
 # ----------------------------------------------------------------- data access
@@ -69,9 +74,9 @@ class Facts:
         if missing:
             raise SystemExit(
                 f"missing {', '.join(missing)}.json in bench/results -- run:\n"
-                f"  python -m revenueguard.experiment --days 2 "
+                f"  python -m razorguard.experiment --days 2 "
                 f"--json bench/results/experiment.json\n"
-                f"  python -m revenueguard.validate --seeds 8 --days 2 "
+                f"  python -m razorguard.validate --seeds 8 --days 2 "
                 f"--json bench/results/validation.json")
 
         v = self.val["summary"]
@@ -158,6 +163,51 @@ S = styles()
 
 def P(text, style="body"):
     return Paragraph(text, S[style])
+
+
+def logo_drawing(scale: float = 1.0) -> Drawing:
+    """The RazorGuard shield, drawn natively.
+
+    Deliberately not an embedded SVG: converters routinely drop gradients and
+    clip paths, and a mark that renders as a black square on the cover of the
+    document it heads is worse than one drawn plainly. Two solid faces sharing
+    the shield's own outline give the depth; every stroke sits inside the
+    silhouette rather than being clipped to it.
+    """
+    size = 44.0 * scale
+    d = Drawing(size, size)
+    u = size / 96.0
+
+    def pts(*coords):
+        return [c * u if i % 2 == 0 else (96 - c) * u
+                for i, c in enumerate(coords)]
+
+    outline = pts(48, 6, 86, 20, 86, 48, 76, 72, 48, 90, 20, 72, 10, 48, 10, 20)
+    d.add(Polygon(outline, fillColor=ACCENT, strokeColor=None))
+    d.add(Polygon(pts(48, 6, 86, 20, 86, 48, 76, 72, 48, 90),
+                  fillColor=ACCENT_DARK, strokeColor=None))
+
+    white = colors.Color(1, 1, 1, alpha=0.34)
+    for a, b, c, dd, e, f in ((31, 66, 40, 44, 48, 28), (65, 66, 56, 44, 48, 28)):
+        d.add(Line(a * u, (96 - b) * u, c * u, (96 - dd) * u,
+                   strokeColor=white, strokeWidth=4.5 * u))
+        d.add(Line(c * u, (96 - dd) * u, e * u, (96 - f) * u,
+                   strokeColor=white, strokeWidth=4.5 * u))
+
+    d.add(Line(48 * u, (96 - 72) * u, 48 * u, (96 - 58) * u,
+               strokeColor=colors.Color(1, 1, 1, alpha=0.55),
+               strokeWidth=5 * u))
+    for x1, y1, x2, y2 in ((53, 47, 63, 37), (53, 37, 63, 47)):
+        d.add(Line(x1 * u, (96 - y1) * u, x2 * u, (96 - y2) * u,
+                   strokeColor=BAD, strokeWidth=5 * u))
+    d.add(Line(48 * u, (96 - 58) * u, 37 * u, (96 - 45) * u,
+               strokeColor=colors.white, strokeWidth=6 * u))
+    d.add(Line(37 * u, (96 - 45) * u, 36 * u, (96 - 33) * u,
+               strokeColor=colors.white, strokeWidth=6 * u))
+    for x1, y1, x2, y2 in ((30, 39, 36, 31), (36, 31, 42, 39)):
+        d.add(Line(x1 * u, (96 - y1) * u, x2 * u, (96 - y2) * u,
+                   strokeColor=colors.white, strokeWidth=6 * u))
+    return d
 
 
 def together(*flowables):
@@ -423,7 +473,7 @@ class Doc(BaseDocTemplate):
         canvas.line(50, A4[1] - 36, A4[0] - 50, A4[1] - 36)
         canvas.setFont("Helvetica", 7.5)
         canvas.setFillColor(MUTED)
-        canvas.drawString(50, A4[1] - 32, "RevenueGuard")
+        canvas.drawString(50, A4[1] - 32, "RazorGuard")
         canvas.drawRightString(A4[0] - 50, A4[1] - 32, self.footer_text)
         canvas.line(50, 34, A4[0] - 50, 34)
         canvas.drawString(50, 24, "Razorpay AI Buildathon - Track 03, "
@@ -434,11 +484,15 @@ class Doc(BaseDocTemplate):
 
 def cover(title: str, subtitle: str, blurb: str, f: Facts) -> List:
     return [
-        Spacer(1, 150),
+        Spacer(1, 110),
+        logo_drawing(1.15),
+        Spacer(1, 16),
         P(title, "title"),
         P(subtitle, "subtitle"),
-        Table([[""]], colWidths=[495], rowHeights=[2.2],
-              style=TableStyle([("BACKGROUND", (0, 0), (-1, -1), ACCENT)]),
+        Table([[""], [""]], colWidths=[495], rowHeights=[2.6, 1.2],
+              style=TableStyle([
+                  ("BACKGROUND", (0, 0), (-1, 0), ACCENT),
+                  ("BACKGROUND", (0, 1), (-1, 1), ACCENT_DARK)]),
               hAlign="LEFT"),
         Spacer(1, 22),
         P(blurb, "lead"),

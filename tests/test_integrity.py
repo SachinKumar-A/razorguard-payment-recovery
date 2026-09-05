@@ -20,14 +20,14 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from revenueguard.config import WorldConfig
-from revenueguard.control_plane import ControlPlane
-from revenueguard.detectors import default_detector
-from revenueguard.policy import PolicyConfig, PolicyEngine
-from revenueguard.scenarios import default_incident_plan
-from revenueguard.world import World
+from razorguard.config import WorldConfig
+from razorguard.control_plane import ControlPlane
+from razorguard.detectors import default_detector
+from razorguard.policy import PolicyConfig, PolicyEngine
+from razorguard.scenarios import default_incident_plan
+from razorguard.world import World
 
-PKG = pathlib.Path(__file__).resolve().parent.parent / "revenueguard"
+PKG = pathlib.Path(__file__).resolve().parent.parent / "razorguard"
 RESULTS = pathlib.Path(__file__).resolve().parent.parent / "bench" / "results"
 
 
@@ -47,8 +47,8 @@ def test_no_detector_can_import_the_incident_plan():
 
 def test_the_observation_carries_no_ground_truth():
     world = World(WorldConfig(seed=7), default_incident_plan(1))
-    from revenueguard.routing import RoutingTable
-    from revenueguard.config import ISSUERS, METHODS
+    from razorguard.routing import RoutingTable
+    from razorguard.config import ISSUERS, METHODS
 
     observations = world.step(600, RoutingTable.default(METHODS, ISSUERS))
     assert observations

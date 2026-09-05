@@ -6,10 +6,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 
-from revenueguard.audit import AuditLedger
-from revenueguard.config import METHOD_TICKET
-from revenueguard.executor import (DryRunExecutor, RazorpayTestExecutor,
-                                   RecoveryIntent, intents_from_ledger)
+from razorguard.audit import AuditLedger
+from razorguard.config import METHOD_TICKET
+from razorguard.executor import (DryRunExecutor, RazorpayTestExecutor,
+                                 RecoveryIntent, intents_from_ledger)
 
 
 def _intent(seq=1, amount=1499.50):
@@ -26,13 +26,13 @@ def test_amount_is_converted_to_paise_without_float_drift():
 
 def test_notes_carry_the_decision_context_out_of_this_repo():
     notes = _intent().notes()
-    assert notes["revenueguard_audit_seq"] == "1"
-    assert notes["revenueguard_from"] == "gw_beta"
-    assert notes["revenueguard_to"] == "gw_alpha"
+    assert notes["razorguard_audit_seq"] == "1"
+    assert notes["razorguard_from"] == "gw_beta"
+    assert notes["razorguard_to"] == "gw_alpha"
     # Razorpay caps note values; a long reason must not blow the request up.
     long_reason = _intent()
     long_reason.reason = "x" * 5000
-    assert len(long_reason.notes()["revenueguard_reason"]) <= 240
+    assert len(long_reason.notes()["razorguard_reason"]) <= 240
 
 
 def test_dry_run_sends_nothing_and_says_so():

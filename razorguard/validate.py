@@ -11,8 +11,8 @@ Across seeds we report the mean, the spread, and a t-based 95% confidence
 interval on the mean difference -- and, most usefully, the number of seeds where
 the router *lost* money. If that number is not zero, it is printed.
 
-    python -m revenueguard.validate --seeds 8 --days 2
-    python -m revenueguard.validate --seeds 12 --days 1 --json bench/results/validation.json
+    python -m razorguard.validate --seeds 8 --days 2
+    python -m razorguard.validate --seeds 12 --days 1 --json bench/results/validation.json
 """
 from __future__ import annotations
 
@@ -102,7 +102,7 @@ def summarise(rows: List[Dict[str, float]], key: str) -> Dict[str, float]:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="revenueguard.validate")
+    ap = argparse.ArgumentParser(prog="razorguard.validate")
     ap.add_argument("--seeds", type=int, default=8)
     ap.add_argument("--days", type=int, default=2)
     ap.add_argument("--start-seed", type=int, default=1)

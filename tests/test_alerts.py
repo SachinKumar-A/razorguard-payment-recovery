@@ -4,8 +4,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from revenueguard.alerts import Alert, Alerter, alerts_from_ledger
-from revenueguard.audit import AuditLedger
+from razorguard.alerts import Alert, Alerter, alerts_from_ledger
+from razorguard.audit import AuditLedger
 
 
 def alert(kind="escalation", subject="upi|hdfc", rule="no_healthy_destination"):
@@ -14,7 +14,7 @@ def alert(kind="escalation", subject="upi|hdfc", rule="no_healthy_destination"):
 
 
 def test_no_webhook_configured_means_disabled(monkeypatch):
-    monkeypatch.delenv("REVENUEGUARD_ALERT_WEBHOOK", raising=False)
+    monkeypatch.delenv("RAZORGUARD_ALERT_WEBHOOK", raising=False)
     a = Alerter()
     assert a.enabled is False
     assert a.send(alert()) is False
@@ -63,7 +63,7 @@ def test_a_full_queue_drops_rather_than_blocking_the_loop():
 
 def test_payload_carries_the_suppressed_count():
     payload = alert().payload(suppressed=4)
-    assert payload["source"] == "revenueguard"
+    assert payload["source"] == "razorguard"
     assert payload["suppressed_duplicates"] == 4
     assert payload["rule"] == "no_healthy_destination"
 

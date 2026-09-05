@@ -17,7 +17,7 @@ Everything in this section is a made-up environment. None of it came from
 Razorpay, from a public dataset, or from any real payment system. I chose these
 values to be *plausible*, not to be *true*.
 
-### The fleet — `revenueguard/config.py`
+### The fleet — `razorguard/config.py`
 
 | what | value | how it was chosen |
 |---|---|---|
@@ -41,7 +41,7 @@ should read the figure as **+11,452 successful payments** and
 **+0.58 percentage points of success rate**, both of which are independent of
 them.
 
-### Congestion — `revenueguard/capacity.py`
+### Congestion — `razorguard/capacity.py`
 
 | parameter | value | status |
 |---|---|---|
@@ -51,13 +51,13 @@ them.
 | Headroom | 1.6× peak baseline | Invented. |
 
 This is the most consequential invention in the project, and it is the one thing
-I could not close. `revenueguard/sensitivity.py` exists specifically because of
+I could not close. `razorguard/sensitivity.py` exists specifically because of
 it: it sweeps the shift cap against four different curves and reports whether
 the conclusion survives. It mostly does — and it also found that on two of those
 curves the system **loses money at every setting**, which is now the headline
 limitation in both the README and DEPLOY.md.
 
-### The incidents — `revenueguard/scenarios.py`
+### The incidents — `razorguard/scenarios.py`
 
 18 injected degradations per two-day run: 4 hard outages, 4 gradual slides,
 6 issuer-side faults, 4 shallow drops, placed at fixed times across the diurnal
@@ -90,7 +90,7 @@ Nothing in this section is faked, stubbed, or shortcut.
 | Prometheus metrics, JSON logs | Real |
 | Confidence intervals | Real t-distribution arithmetic over 8 paired seeds |
 
-### Razorpay integration — `revenueguard/executor.py`
+### Razorpay integration — `razorguard/executor.py`
 
 **Real code, never executed against Razorpay's servers.** It builds genuine
 test-mode Order requests with the decision context in `notes` and calls the
@@ -102,7 +102,7 @@ Order IDs shown in the dry-run output are `order_DRYRUN000004`-style
 placeholders, and are labelled `mode=dry_run` in every line so they can never be
 mistaken for real ones.
 
-### LLM narration — `revenueguard/narrator.py`
+### LLM narration — `razorguard/narrator.py`
 
 Real Anthropic API code, **never executed with a live key in this project**. No
 `ANTHROPIC_API_KEY` was available, so every narration you have seen came from
@@ -148,10 +148,10 @@ differ**.
 
 ```bash
 pytest tests/test_documented_claims.py -q   # docs vs bench/results
-grep -rn "scenarios" revenueguard/detectors/ # empty: detectors cannot see ground truth
-python -m revenueguard.experiment --days 2   # regenerate the headline
-python -m revenueguard.validate --seeds 8    # regenerate the interval
-python -m revenueguard.sensitivity --days 2  # regenerate the limitation
+grep -rn "scenarios" razorguard/detectors/ # empty: detectors cannot see ground truth
+python -m razorguard.experiment --days 2   # regenerate the headline
+python -m razorguard.validate --seeds 8    # regenerate the interval
+python -m razorguard.sensitivity --days 2  # regenerate the limitation
 ```
 
 Every JSON file under `bench/results/` is committed, so a reviewer can compare

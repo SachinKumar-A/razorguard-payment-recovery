@@ -8,12 +8,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 
-from revenueguard.applier import (ChangeTracker, FileApplier, NullApplier,
-                                  Recommendation, WebhookApplier,
+from razorguard.applier import (ChangeTracker, FileApplier, NullApplier,
+                                Recommendation, WebhookApplier,
                                   build_from_env, recommendations_from)
-from revenueguard.config import ISSUERS, METHODS
-from revenueguard.persistence import Lease, Store
-from revenueguard.routing import RoutingTable
+from razorguard.config import ISSUERS, METHODS
+from razorguard.persistence import Lease, Store
+from razorguard.routing import RoutingTable
 
 
 def rec(key="upi|hdfc", alpha=0.75, minute=10):
@@ -40,7 +40,7 @@ def test_recommendations_cover_only_diverted_keys():
 def test_payload_states_the_mode_it_was_sent_under():
     assert rec().payload("notify")["mode"] == "notify"
     assert rec().payload("auto")["mode"] == "auto"
-    assert rec().payload("auto")["source"] == "revenueguard"
+    assert rec().payload("auto")["source"] == "razorguard"
 
 
 # -- only push what changed --------------------------------------------------
@@ -93,7 +93,7 @@ def test_file_applier_writes_the_table_atomically(tmp_path):
     assert result.delivered == 2
     document = json.loads(path.read_text(encoding="utf-8"))
     assert set(document["keys"]) == {"upi|hdfc", "card|sbi"}
-    assert document["source"] == "revenueguard"
+    assert document["source"] == "razorguard"
     # The temporary file must not be left behind for a watcher to find.
     assert not (tmp_path / "nested" / "routing.json.tmp").exists()
 
@@ -117,24 +117,24 @@ def test_webhook_failures_are_counted_not_raised():
 # -- configuration -----------------------------------------------------------
 
 def test_default_is_publish_only(monkeypatch):
-    for var in ("REVENUEGUARD_APPLY_MODE", "REVENUEGUARD_APPLY_FILE",
-                "REVENUEGUARD_APPLY_WEBHOOK"):
+    for var in ("RAZORGUARD_APPLY_MODE", "RAZORGUARD_APPLY_FILE",
+                "RAZORGUARD_APPLY_WEBHOOK"):
         monkeypatch.delenv(var, raising=False)
     assert isinstance(build_from_env(), NullApplier)
 
 
 def test_a_mode_without_a_destination_is_refused(monkeypatch):
-    monkeypatch.setenv("REVENUEGUARD_APPLY_MODE", "auto")
-    for var in ("REVENUEGUARD_APPLY_FILE", "REVENUEGUARD_APPLY_WEBHOOK"):
+    monkeypatch.setenv("RAZORGUARD_APPLY_MODE", "auto")
+    for var in ("RAZORGUARD_APPLY_FILE", "RAZORGUARD_APPLY_WEBHOOK"):
         monkeypatch.delenv(var, raising=False)
     with pytest.raises(RuntimeError, match="needs somewhere to send"):
         build_from_env()
 
 
 def test_file_destination_is_selected(monkeypatch, tmp_path):
-    monkeypatch.setenv("REVENUEGUARD_APPLY_MODE", "auto")
-    monkeypatch.setenv("REVENUEGUARD_APPLY_FILE", str(tmp_path / "r.json"))
-    monkeypatch.delenv("REVENUEGUARD_APPLY_WEBHOOK", raising=False)
+    monkeypatch.setenv("RAZORGUARD_APPLY_MODE", "auto")
+    monkeypatch.setenv("RAZORGUARD_APPLY_FILE", str(tmp_path / "r.json"))
+    monkeypatch.delenv("RAZORGUARD_APPLY_WEBHOOK", raising=False)
     assert isinstance(build_from_env(), FileApplier)
 
 

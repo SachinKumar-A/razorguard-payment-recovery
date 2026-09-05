@@ -7,11 +7,11 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from revenueguard.config import WorldConfig
-from revenueguard.detectors import FixedThresholdDetector, PosteriorDropDetector
-from revenueguard.metrics import evaluate
-from revenueguard.scenarios import default_incident_plan
-from revenueguard.simulator import Simulator
+from razorguard.config import WorldConfig
+from razorguard.detectors import FixedThresholdDetector, PosteriorDropDetector
+from razorguard.metrics import evaluate
+from razorguard.scenarios import default_incident_plan
+from razorguard.simulator import Simulator
 
 
 def _run(detector, days=1, seed=7):

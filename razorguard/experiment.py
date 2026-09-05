@@ -9,7 +9,7 @@ the total number of payment attempts must come out equal. The run prints that
 equality as a check: if it ever fails, the comparison is invalid and the number
 below it means nothing.
 
-    python -m revenueguard.experiment --days 2 --json bench/results/experiment.json
+    python -m razorguard.experiment --days 2 --json bench/results/experiment.json
 """
 from __future__ import annotations
 
@@ -74,7 +74,7 @@ def report(control: RunOutcome, treat: RunOutcome, days: int,
            control_exposure: float = 0.0, treat_exposure: float = 0.0) -> dict:
     w = 82
     print("=" * w)
-    print(f"RevenueGuard -- control vs treatment over {days} simulated days")
+    print(f"RazorGuard -- control vs treatment over {days} simulated days")
     print("=" * w)
 
     same_demand = control.attempts == treat.attempts
@@ -216,7 +216,7 @@ def report(control: RunOutcome, treat: RunOutcome, days: int,
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(prog="revenueguard.experiment")
+    ap = argparse.ArgumentParser(prog="razorguard.experiment")
     ap.add_argument("--days", type=int, default=2)
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--json", type=str, default=None)

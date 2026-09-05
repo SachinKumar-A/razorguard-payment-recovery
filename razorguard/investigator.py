@@ -40,7 +40,7 @@ from .simulator import Observation
 MODEL = "claude-opus-5"
 MAX_TOOL_ROUNDS = 12
 
-SYSTEM = """You investigate decisions made by RevenueGuard, a payment routing
+SYSTEM = """You investigate decisions made by RazorGuard, a payment routing
 control plane, on behalf of an on-call engineer.
 
 The system monitors payment success rates per slice - one gateway, one payment

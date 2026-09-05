@@ -1,0 +1,19 @@
+# RazorGuard console theme.
+#
+# Razorpay's palette: their signature blue on a near-black navy, with generous
+# whitespace and a single accent. Referenced deliberately - this is a submission
+# to their buildathon and it should look like it belongs next to their product -
+# but the mark and every asset here are original.
+
+[theme]
+primaryColor = "#3395FF"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F7FC"
+textColor = "#02042B"
+font = "sans serif"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false

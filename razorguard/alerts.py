@@ -52,7 +52,7 @@ class Alert:
 
     def payload(self, suppressed: int = 0) -> Dict[str, object]:
         body = {
-            "source": "revenueguard",
+            "source": "razorguard",
             "minute": self.minute,
             "kind": self.kind,
             "subject": self.subject,
@@ -70,7 +70,7 @@ class Alerter:
 
     def __init__(self, url: Optional[str] = None, timeout: float = 5.0,
                  dedupe_seconds: int = DEDUPE_SECONDS):
-        self.url = url or os.environ.get("REVENUEGUARD_ALERT_WEBHOOK") or None
+        self.url = url or os.environ.get("RAZORGUARD_ALERT_WEBHOOK") or None
         self.timeout = timeout
         self.dedupe_seconds = dedupe_seconds
 
@@ -87,7 +87,7 @@ class Alerter:
         self._thread: Optional[threading.Thread] = None
         if self.url:
             self._thread = threading.Thread(target=self._drain, daemon=True,
-                                            name="revenueguard-alerts")
+                                            name="razorguard-alerts")
             self._thread.start()
 
     @property
