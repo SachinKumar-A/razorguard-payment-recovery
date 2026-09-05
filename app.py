@@ -207,16 +207,21 @@ CSS_NAV = """
 /* Two lines, split explicitly rather than left to whatever the container
    width happens to produce. It is the one sentence that says what the thing
    does, so where it breaks is a decision, not an accident. */
-/* The sentence gets a row of its own. Squeezed between the lockup and the
-   quotes it had about 700px to work with, so each half wrapped again and the
-   two deliberate lines became four accidental ones. `flex:1 0 100%` forces it
-   onto its own line, where each half fits comfortably and the break lands
-   where it was written to land. */
-.board .tag{flex:1 0 100%; order:3; font-size:1.02rem; color:var(--body);
-  line-height:1.5; letter-spacing:-.005em; max-width:none;
-  border-top:1px solid var(--rule); padding-top:.8rem; margin-top:.15rem;}
+/* The sentence sits in the gap beside the lockup, which is otherwise a lot of
+   empty board. It has to stay two lines there, and the space it gets depends
+   on how wide the window is - so the size scales with the viewport rather than
+   being fixed and hoping. Below 1300px there genuinely is not room beside the
+   quotes, and it takes a row of its own instead of wrapping into four lines. */
+.board .tag{flex:1 1 auto; min-width:0; color:var(--body); line-height:1.5;
+  letter-spacing:-.005em; max-width:none;
+  font-size:clamp(.8rem, .62vw + .3rem, 1rem);
+  border-left:2px solid var(--rule); padding-left:1.4rem;}
 .board .tag b{color:var(--ink); font-weight:600}
-.board .sp{flex:1; min-width:.25rem}
+.board .sp{display:none}
+@media (max-width:1300px){
+  .board .tag{flex:1 0 100%; order:3; border-left:none; padding-left:0;
+    font-size:.95rem; border-top:1px solid var(--rule); padding-top:.8rem;}
+}
 .quotes{display:flex; align-items:stretch; flex-wrap:wrap}
 .q{padding:0 1.05rem; border-left:1px solid var(--rule); min-width:8.6rem}
 .q:first-child{border-left:none}
