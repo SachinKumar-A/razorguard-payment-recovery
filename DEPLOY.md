@@ -16,8 +16,20 @@ is not a thing this repository can claim in advance.
 ## Run it
 
 ```bash
-cp .env.example .env          # set RAZORGUARD_HMAC_KEY
+# If you already have a .env with credentials in it, do NOT copy over it -
+# `cp .env.example .env` will silently destroy them. Append instead:
+#   cat .env.example >> .env
+cp -n .env.example .env       # -n: never clobber an existing file
 docker compose up --build
+```
+
+Docker is optional. The service runs the same way without it, and that path is
+the one covered by tests:
+
+```bash
+pip install -r requirements-service.txt
+export RAZORGUARD_HMAC_KEY=$(python -c "import secrets;print(secrets.token_hex(32))")
+uvicorn razorguard.service:app --host 0.0.0.0 --port 8000
 ```
 
 - service → `http://localhost:8000` (`/docs` for OpenAPI)
