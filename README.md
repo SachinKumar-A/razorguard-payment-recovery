@@ -323,6 +323,7 @@ pip install -r requirements.txt        # or requirements-dev.txt to run the test
 python -m razorguard.validate   --seeds 8 --days 2   # the headline, with a CI
 python -m razorguard.experiment --days 2             # one seed, in detail
 python -m razorguard.stress     --days 2             # are the caps costing money?
+python -m razorguard.showcase                        # the whole story, six acts
 python -m razorguard.demo                            # replay an incident
 python -m razorguard.bench      --days 2             # detector head-to-head
 python -m razorguard.sweep      --budget 1.0         # matched false-alarm curve

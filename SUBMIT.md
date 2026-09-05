@@ -102,7 +102,32 @@ or the README.
 
 ## 3. The video — 5 minutes
 
-Screen recording with voice. No slides. Every command below is real and runs.
+**One command drives the whole thing.**
+
+```bash
+python -m razorguard.showcase
+```
+
+Six acts, in order, with a title card before each and a pause between. Talk
+over it and press Enter to move on. It pulls the interesting lines out for you,
+so you are not hunting through a hundred lines of output while speaking.
+
+```bash
+python -m razorguard.showcase --fast        # rehearse on one simulated day
+python -m razorguard.showcase --act 5       # re-record just one segment
+python -m razorguard.showcase --auto 8      # pauses on a timer, no keypresses
+```
+
+Close on the console for twenty seconds:
+
+```bash
+streamlit run app.py     # the accumulating chart, then Incident replay
+```
+
+**Do not** build the video around changing the day slider and clicking tabs.
+That shows a settings panel. The acts below show a system deciding.
+
+The script for each act is what to say over it. Every command is real and runs.
 
 **0:00–0:35 — the problem, and the thing most people would hide**
 
