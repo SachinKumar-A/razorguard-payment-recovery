@@ -314,10 +314,12 @@ def build(f: Facts):
         "both arms execute; the result is written to <font face='Courier' "
         "size='8.5'>.cache/</font> and every load after that is about a "
         "second. The Docker image ships with the defaults already warmed."))
-    A(P("The header is modelled on an exchange front page: a utility strip, "
-        "the board with the paired-arm quotes, a wide primary navigation, and "
-        "a tape running the eighteen incidents with what each put at risk and "
-        "what came back. Hover the tape to stop it."))
+    A(P("The header is modelled on an exchange front page: a status strip "
+        "with the size of the run, the board with the paired-arm quotes, a "
+        "wide primary navigation, and a tape running the eighteen incidents "
+        "with what each put at risk and what came back. Hover the tape to "
+        "stop it. The navigation and the tiles are buttons rather than links, "
+        "so clicking one reruns the page in place instead of reloading it."))
     A(P("Ten pages, grouped by what you are doing. Every route lives in the "
         "URL &mdash; including the simulation settings &mdash; so the tiles "
         "along the top are real links, a view can be sent to somebody as a "
@@ -330,7 +332,10 @@ def build(f: Facts):
         "<b>Overview</b> &mdash; cumulative recovery, then success rate with "
         "the router on and off. Red bands are injected incidents; triangles "
         "are actions and rollbacks. Scroll to zoom into a single incident, "
-        "drag to pan, hover for the values under the pointer.",
+        "drag to pan, hover for the values under the pointer, and "
+        "<b>click any point</b> to open that minute: the figures either side, "
+        "which incident was live, and the ledger entries within three minutes "
+        "of it.",
         "<b>Decision record</b> &mdash; a board of all eighteen incidents "
         "worst first, then the same eighteen as ranked "
         "cards, heaviest first, each carrying the decision path that produced "

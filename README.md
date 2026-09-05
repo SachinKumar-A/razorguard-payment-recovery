@@ -334,7 +334,7 @@ python -m razorguard.execute    --limit 6            # Razorpay test mode, dry r
 streamlit run app.py                                   # operator console
 
 docker compose up --build                              # service + console
-pytest -q                                              # 215 property tests
+pytest -q                                              # 228 property tests
 ```
 
 Deterministic under `--seed`. Every figure below is copied from those commands'
@@ -357,10 +357,21 @@ default settings already warmed at build time.
 
 The header is modelled on an exchange front page, because that is the closest
 thing to what this console is: a live board whose headline numbers and
-navigation have to be readable from across a room. Four bands — a utility
-strip, the board itself with the paired-arm quotes, a wide primary navigation,
-and a tape running the eighteen incidents with what each put at risk and what
-came back.
+navigation have to be readable from across a room. Four bands — a status
+strip carrying the size of the run, the board itself with the paired-arm
+quotes, a wide primary navigation, and a tape running the eighteen incidents
+with what each put at risk and what came back.
+
+The navigation and the KPI tiles are Streamlit buttons, not anchors. An anchor
+navigates the document, so every click cost a full page load: a white flash,
+the scroll position lost, the websocket reconnecting. A button reruns the
+script in place and the URL is rewritten alongside it, so a view is still a
+link somebody can be sent and the back button still works, without the reload.
+
+Clicking any point on the recovery timeline opens that minute: the figures
+either side, which incident was live, and the ledger entries within three
+minutes of it, on a frosted panel over the chart. `?at=<minute>` opens the
+same panel from a link.
 
 Ten pages, grouped into what the reader is doing — looking at the evidence,
 at the money, or at whether any of it can be trusted. **Every route lives in

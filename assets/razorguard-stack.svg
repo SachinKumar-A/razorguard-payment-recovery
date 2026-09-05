@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 208" width="300" height="208"
+     role="img" aria-label="RazorGuard">
+  <title>RazorGuard</title>
+  <desc>Stacked lockup: the shield mark above the wordmark, for the console
+        header where the horizontal lockup left the mark too small to read.
+        The mark's geometry is unchanged from razorguard-mark.svg; only its
+        scale and position differ. Original artwork; Razorpay's palette is
+        referenced, their logo is not reproduced.</desc>
+
+  <!-- No gradients and no clip paths, deliberately - both are the first things
+       SVG-to-PDF converters drop. See razorguard-mark.svg for the reasoning. -->
+
+  <g transform="translate(102 0) scale(1.0)">
+    <!-- Shield, light face -->
+    <path d="M48 6 L86 20 V48c0 22-16 34-38 42C26 82 10 70 10 48V20Z"
+          fill="#3395FF"/>
+    <!-- Shield, shaded right face: traces the same outline, so no clip needed -->
+    <path d="M48 6 L86 20 V48c0 22-16 34-38 42Z" fill="#1B6FD1"/>
+
+    <!-- Two healthy routes, kept well inside the silhouette -->
+    <path d="M31 66 L40 44 L48 28" fill="none" stroke="#FFFFFF"
+          stroke-opacity="0.32" stroke-width="4.5" stroke-linecap="round"
+          stroke-linejoin="round"/>
+    <path d="M65 66 L56 44 L48 28" fill="none" stroke="#FFFFFF"
+          stroke-opacity="0.32" stroke-width="4.5" stroke-linecap="round"
+          stroke-linejoin="round"/>
+
+    <!-- The third route fails, and is rerouted around the break -->
+    <path d="M48 72 L48 58" fill="none" stroke="#FFFFFF" stroke-opacity="0.55"
+          stroke-width="5" stroke-linecap="round"/>
+    <path d="M53 47 L63 37 M53 37 L63 47" fill="none" stroke="#FF4D57"
+          stroke-width="5" stroke-linecap="round"/>
+    <path d="M48 58 Q33 50 36 33" fill="none" stroke="#FFFFFF" stroke-width="6"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M30 39 L36 31 L42 39" fill="none" stroke="#FFFFFF" stroke-width="6"
+          stroke-linecap="round" stroke-linejoin="round"/>
+
+    <path d="M48 6 L86 20 V48c0 22-16 34-38 42C26 82 10 70 10 48V20Z"
+          fill="none" stroke="#0D2366" stroke-opacity="0.28" stroke-width="2"/>
+  </g>
+
+  <text x="150" y="150" text-anchor="middle"
+        font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="46" font-weight="700" letter-spacing="-1.1"
+        fill="#02042B">Razor<tspan fill="#3395FF">Guard</tspan></text>
+  <text x="150" y="176" text-anchor="middle"
+        font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="13.5" font-weight="500" letter-spacing="0.7"
+        fill="#5A6B8C">Detect degradation · Route around it · Prove what it recovered</text>
+</svg>

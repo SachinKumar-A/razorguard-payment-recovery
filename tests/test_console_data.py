@@ -7,6 +7,7 @@ return the same numbers without running the control plane again.
 """
 from __future__ import annotations
 
+import pathlib
 import pickle
 import time
 
@@ -185,3 +186,68 @@ def test_the_refusal_decomposition_does_not_go_negative(cache_dir):
     total = t["blocked"] + t["escalated"]
     by_rule = sum(t["blocked_by_rule"].values())
     assert by_rule + t["rollbacks"] <= total
+
+
+# ---------------------------------------------------------------------------
+# The console itself. These run the real Streamlit script through its test
+# harness, which is the only way to catch the class of break that does not
+# raise until a particular page is rendered.
+# ---------------------------------------------------------------------------
+
+VIEWS = ["overview", "decisions", "replay", "recovery", "actions", "refused",
+         "rollbacks", "audit", "method", "settings"]
+
+
+def _app(**params):
+    from streamlit.testing.v1 import AppTest
+    at = AppTest.from_file(
+        str(pathlib.Path(__file__).resolve().parent.parent / "app.py"),
+        default_timeout=900)
+    for k, v in params.items():
+        at.query_params[k] = str(v)
+    return at.run()
+
+
+@pytest.mark.parametrize("view", VIEWS)
+def test_every_page_renders(view):
+    at = _app(view=view, days=1, seed=3)
+    assert not at.exception, [str(e.value) for e in at.exception]
+
+
+def test_navigation_does_not_leave_the_page():
+    """The navigation is buttons rather than anchors, so a click reruns the
+    script and rewrites the URL instead of loading the document again. If these
+    ever go back to being links, the click below stops changing anything."""
+    at = _app(days=1, seed=3)
+    keys = {b.key for b in at.button}
+    assert "nav_refused" in keys and "kpi_Rollbacks" in keys
+
+    # The harness hands query parameters back as lists; the runtime hands them
+    # back as strings. Normalise rather than assert on the harness's shape.
+    def view_of(t):
+        v = t.query_params["view"]
+        return v[0] if isinstance(v, list) else v
+
+    at.button(key="nav_refused").click().run()
+    assert view_of(at) == "refused"
+    assert not at.exception
+
+    at.button(key="kpi_Rollbacks").click().run()
+    assert view_of(at) == "rollbacks"
+    assert not at.exception
+
+
+def test_settings_is_off_the_navigation_bar():
+    at = _app(days=1, seed=3)
+    assert not any(b.key == "nav_settings" for b in at.button)
+
+
+def test_a_clicked_minute_opens_with_that_minute_s_ledger():
+    """The chart's click selection cannot be driven from the test harness, so
+    the same panel is reachable by `?at=`, which is also how a particular
+    minute gets shared as a link."""
+    at = _app(view="overview", days=1, seed=3, at=200)
+    assert not at.exception
+    panel = [m.value for m in at.markdown if 'class="moment"' in m.value]
+    assert panel, "clicking a minute produced no panel"
+    assert "d1 03:20" in panel[0]
