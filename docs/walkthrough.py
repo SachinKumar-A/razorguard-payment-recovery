@@ -559,6 +559,8 @@ def build(f: Facts):
         ["RazorGuard-Summary-and-Workflow.pdf", "The five-page version"],
         ["RazorGuard-Pitch-3min.pdf",
          "What to say on camera, and what to have on screen while saying it"],
+        ["RazorGuard-Voiceover-10min.pdf",
+         "The same, at walkthrough length, segment by segment"],
         ["DEPLOY.md", "Running it against real traffic, and what is still open"],
         ["DATA.md", "Every invented constant, and which results depend on it"],
     ], [230, 265]))

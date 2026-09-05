@@ -182,6 +182,47 @@ def _compute(days: int, seed: int, routing: bool, tuning: Dict[str, float]):
     }
 
 
+def incident_summary(control: Dict, treatment: Dict) -> List[Dict]:
+    """Per-incident figures derived from the two arms, worst first.
+
+    Lives here rather than in the console because two things now quote these
+    numbers - the console's decision cards and the voiceover script - and a
+    figure computed twice is a figure that eventually disagrees with itself.
+
+    Two slice sets, deliberately. The *source* set is the routes the incident
+    broke, and is where the success-rate collapse is visible. The *cohort* is
+    every route serving the same (method, issuer) pairs, and is where the
+    recovery lands - because succeeding at routing means emptying the broken
+    routes and the traffic takes the money with it to another gateway. Measure
+    recovery on the source set and a working system reports a loss on its
+    largest save.
+    """
+    ci = control["incidents"].set_index("id")
+    out: List[Dict] = []
+    for t in treatment["incidents"].itertuples():
+        c = ci.loc[t.id]
+        pre_sr = (c["src_pre_suc"] / c["src_pre_att"]) if c["src_pre_att"] else 0.0
+        in_sr = (c["src_suc"] / c["src_att"]) if c["src_att"] else 0.0
+        coh_pre = ((c["coh_pre_suc"] / c["coh_pre_att"])
+                   if c["coh_pre_att"] else 0.0)
+        ticket = (c["coh_pre_rev"] / c["coh_pre_suc"]) if c["coh_pre_suc"] else 0.0
+        at_risk = max(0.0, coh_pre * c["coh_att"] - c["coh_suc"]) * ticket
+        recovered = t.coh_rev - c["coh_rev"]
+        out.append({
+            "id": t.id, "kind": t.kind, "blast_radius": t.blast_radius,
+            "start": int(t.start), "end": int(t.end), "duration": int(t.duration),
+            "routes": int(t.slices), "cohort": int(t.cohort),
+            "pre_sr": pre_sr, "in_sr": in_sr, "drop_pp": (pre_sr - in_sr) * 100,
+            "at_risk": at_risk, "recovered": recovered,
+            "saved": int(t.coh_suc - c["coh_suc"]),
+            "capture": (recovered / at_risk) if at_risk > 0 else 0.0,
+            "attempts": int(c["coh_att"]),
+            "conserved": int(c["coh_att"]) == int(t.coh_att),
+        })
+    out.sort(key=lambda r: -r["at_risk"])
+    return out
+
+
 def cache_key(days: int, seed: int, routing: bool,
               tuning: Optional[Dict[str, float]] = None) -> str:
     """One filename per distinct run. The tuning is hashed rather than spelled

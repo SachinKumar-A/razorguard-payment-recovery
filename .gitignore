@@ -10,3 +10,9 @@ state/
 *.db-shm
 *.db-wal
 .cache/
+
+# Screen recordings. A 470 MB take does not belong in a git history, and
+# GitHub refuses anything over 100 MB anyway.
+*.mp4
+*.mkv
+*.mov

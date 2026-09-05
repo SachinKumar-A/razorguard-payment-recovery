@@ -215,3 +215,74 @@ def test_the_pitch_fits_three_minutes():
         plain = plain.replace("&mdash;", " ").replace("&rarr;", " ")
         words += len(plain.split())
     assert 350 <= words <= 450, f"{words} words is not a three-minute script"
+
+
+# ---------------------------------------------------------------------------
+# The voiceover script for the walkthrough recording. Spoken aloud over a
+# 10:10 take, so both its figures and its length have to hold.
+# ---------------------------------------------------------------------------
+
+def _voiceover_segments():
+    from docs.build_docs import Facts
+    from razorguard.console_data import incident_summary, run
+    import docs.voiceover as vo
+
+    vo.SEGMENTS.clear()
+    vo.CLOCK_S = 0.0
+    f = Facts()
+    control = run(f.days, 7, routing=False)
+    treat = run(f.days, 7, routing=True)
+    vo.narration(f, incident_summary(control, treat)[0], treat, control)
+    return vo, f
+
+
+def test_the_voiceover_fits_the_recording():
+    """569 seconds of speech in a 610 second take leaves about forty seconds
+    of pause. Past the runtime there is nowhere for the words to go."""
+    vo, _ = _voiceover_segments()
+    words = sum(w for _clock, _title, w in vo.SEGMENTS)
+    speech = words / vo.WPM * 60
+    assert speech < vo.RUNTIME, f"{speech:.0f}s of speech in {vo.RUNTIME}s"
+    assert vo.RUNTIME - speech > 25, "no room left to breathe between segments"
+    assert len(vo.SEGMENTS) == 11
+
+
+def test_the_voiceover_quotes_the_benchmarks(results):
+    """Every figure said over the recording has to be one the repository
+    produces - including the per-incident ones, which come from the same
+    control-plane run the console renders."""
+    from docs.build_docs import Facts, rupees
+    from razorguard.console_data import incident_summary, run
+    import docs.voiceover as vo
+
+    vo.SEGMENTS.clear()
+    vo.CLOCK_S = 0.0
+    f = Facts()
+    control = run(f.days, 7, routing=False)
+    treat = run(f.days, 7, routing=True)
+    worst = incident_summary(control, treat)[0]
+
+    spoken = []
+    original = vo.segment
+
+    def capture(title, screen, paragraphs, note=""):
+        spoken.extend(paragraphs)
+        return original(title, screen, paragraphs, note)
+
+    vo.segment = capture
+    try:
+        vo.narration(f, worst, treat, control)
+    finally:
+        vo.segment = original
+
+    joined = " ".join(spoken)
+    val = results["validation"]["summary"]
+    for figure in (rupees(val["recovered_inr"]["mean"]),
+                   rupees(val["recovered_inr"]["ci_lo"]),
+                   f"{val['share_of_exposure']['mean']:.1%}",
+                   rupees(worst["at_risk"]),
+                   f"{worst['pre_sr']:.1%}",
+                   f"{worst['in_sr']:.1%}",
+                   f"{treat['audit_events']:,}",
+                   str(treat["rollbacks"])):
+        assert figure in joined, figure
