@@ -207,12 +207,16 @@ CSS_NAV = """
 /* Two lines, split explicitly rather than left to whatever the container
    width happens to produce. It is the one sentence that says what the thing
    does, so where it breaks is a decision, not an accident. */
-.board .tag{font-size:1.06rem; color:var(--body); line-height:1.55;
-  border-left:2px solid var(--rule); padding-left:1.4rem; flex:1;
-  min-width:22rem; max-width:none; letter-spacing:-.005em;}
-.board .tag b{color:var(--ink); font-weight:650}
+/* The sentence gets a row of its own. Squeezed between the lockup and the
+   quotes it had about 700px to work with, so each half wrapped again and the
+   two deliberate lines became four accidental ones. `flex:1 0 100%` forces it
+   onto its own line, where each half fits comfortably and the break lands
+   where it was written to land. */
+.board .tag{flex:1 0 100%; order:3; font-size:1.02rem; color:var(--body);
+  line-height:1.5; letter-spacing:-.005em; max-width:none;
+  border-top:1px solid var(--rule); padding-top:.8rem; margin-top:.15rem;}
 .board .tag b{color:var(--ink); font-weight:600}
-.board .sp{flex:0; min-width:.25rem}
+.board .sp{flex:1; min-width:.25rem}
 .quotes{display:flex; align-items:stretch; flex-wrap:wrap}
 .q{padding:0 1.05rem; border-left:1px solid var(--rule); min-width:8.6rem}
 .q:first-child{border-left:none}
