@@ -334,7 +334,7 @@ python -m razorguard.execute    --limit 6            # Razorpay test mode, dry r
 streamlit run app.py                                   # operator console
 
 docker compose up --build                              # service + console
-pytest -q                                              # 202 property tests
+pytest -q                                              # 210 property tests
 ```
 
 Deterministic under `--seed`. Every figure below is copied from those commands'
@@ -347,6 +347,31 @@ their figures directly.
 measurement is real. [`DATA.md`](DATA.md) lists every invented constant —
 ticket sizes, traffic mix, success rates, the congestion curve — and says which
 results depend on which.
+
+### The console
+
+`streamlit run app.py`. The first run of a seed takes about forty seconds while
+both arms execute; the result is written to `.cache/` and every load after that
+is about a second. The Docker image ships with the default seed already warmed
+at build time.
+
+Its centre is the **decision record**: the eighteen incidents as ranked cards,
+heaviest first, each carrying the path that produced it — what the drop was,
+how fast it was caught, how much money was at risk, which bounds were checked,
+what was done, and what that was worth. Cells outlined in blue were measured
+against the control arm; the rest were declared before the run started, and
+keeping those two visually distinct is the point.
+
+One thing that record forced a correction on. Per-incident recovery was
+originally measured over the slices the incident broke, which made the biggest
+and best-handled outage in the run **report a loss rather than its largest
+gain**. Succeeding at routing
+means emptying exactly those slices — the traffic, and the money with it, moves
+to a different gateway. Recovery is now measured over the *cohort*: every route
+serving the same (method, issuer) pairs, whichever gateway carries it. Demand is
+drawn per (minute, method, issuer), so the cohort sees identical attempts in
+both arms and the difference between them is real. Four tests in
+`tests/test_console_data.py` hold that distinction in place.
 
 ---
 
@@ -548,6 +573,7 @@ entirely.
 ```
 app.py              operator console (streamlit)
 razorguard/
+  console_data.py   what the console shows, computed once and cached to disk
   config.py         the fleet: gateways, methods, issuers, volumes, tickets
   capacity.py       gateways degrade under load; the router's actions have a price
   scenarios.py      injected degradations - ground truth, unreadable by detectors
@@ -587,10 +613,16 @@ tests/              202 property tests
 `pyflakes` clean. No result value is hardcoded anywhere in `razorguard/` —
 a test asserts it.
 
-**On the branding.** The mark, wordmark and console theme are original artwork.
-Razorpay's palette and design language are referenced deliberately — this is a
-submission to their buildathon and it should look like it belongs beside their
-product — but their logo is not reproduced anywhere in this repository.
+**On the branding.** The mark and wordmark are original artwork, and Razorpay's
+logo is not reproduced anywhere in this repository.
+
+The console runs on a dark design system carried over from an earlier project
+of mine rather than on Razorpay's palette: layered surfaces instead of one flat
+ground, a single accent reserved for interaction, and a separate semantic scale
+for outcomes so a colour never means two things at once. An operator console
+that gets stared at for an hour during an incident has different requirements
+from a marketing page, and the palette follows the requirement rather than the
+brand.
 
 ---
 

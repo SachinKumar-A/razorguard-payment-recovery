@@ -1,0 +1,23 @@
+# The Dockerfile copies named paths, so nothing here can reach the image by
+# accident. This file is about the build context: without it every build ships
+# the git history, the local console cache and the state database to the
+# daemon before the first instruction runs.
+.git/
+.gitignore
+.cache/
+.streamlit/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.db
+*.db-shm
+*.db-wal
+
+# Local credentials. Not copied by any COPY, and kept out of the context so a
+# mistaken `COPY . .` in some future edit cannot pick them up either.
+.env
+
+# Documentation and PDFs are not part of the runtime image.
+docs/
+*.pdf

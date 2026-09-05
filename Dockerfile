@@ -23,6 +23,12 @@ COPY app.py README.md ./
 COPY assets/ ./assets/
 COPY bench/results/ ./bench/results/
 
+# Warm the console's cache while the image is being built. The run is
+# deterministic, so a container that recomputes it on every start is spending
+# three-quarters of a minute to arrive at a file it could have shipped with.
+# Trades a slower build for a console that opens in about a second.
+RUN python -c "from razorguard.console_data import run; run(2, 7, False); run(2, 7, True)"
+
 # Unprivileged, and /data is a mount point: the state database must outlive the
 # container or persistence buys nothing.
 RUN useradd --create-home --uid 10001 razorguard \

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 112" width="600" height="112"
+     role="img" aria-label="RazorGuard">
+  <title>RazorGuard</title>
+  <desc>RazorGuard wordmark for dark surfaces. Identical geometry to
+        razorguard-lockup.svg; only the type colours change, because the
+        light-ground wordmark is near-black and disappears on the console's
+        background. Original artwork; Razorpay's palette and geometry are
+        referenced, their logo is not reproduced.</desc>
+
+  <!-- No gradients, no clip paths. Both are routinely dropped by SVG-to-PDF
+       converters, and the light twin of this mark heads a PDF. Keeping the two
+       files structurally identical means a geometry fix lands in both. -->
+
+  <path d="M44 12 L78 24 V49c0 19-14 30-34 37C24 79 10 68 10 49V24Z"
+        fill="#3395FF"/>
+  <path d="M44 12 L78 24 V49c0 19-14 30-34 37Z" fill="#1B6FD1"/>
+
+  <path d="M29 64 L37 45 L44 31" fill="none" stroke="#FFFFFF" stroke-opacity="0.32"
+        stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M59 64 L51 45 L44 31" fill="none" stroke="#FFFFFF" stroke-opacity="0.32"
+        stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <path d="M44 70 L44 57" fill="none" stroke="#FFFFFF" stroke-opacity="0.55"
+        stroke-width="4.4" stroke-linecap="round"/>
+  <path d="M48 48 L57 39 M48 39 L57 48" fill="none" stroke="#FF4D57"
+        stroke-width="4.4" stroke-linecap="round"/>
+  <path d="M44 57 Q31 50 34 35" fill="none" stroke="#FFFFFF" stroke-width="5.2"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28 40 L34 33 L40 40" fill="none" stroke="#FFFFFF" stroke-width="5.2"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- On a dark ground the outline reads as a rim light, so it is white at low
+       opacity rather than the navy used on white. -->
+  <path d="M44 12 L78 24 V49c0 19-14 30-34 37C24 79 10 68 10 49V24Z"
+        fill="none" stroke="#FFFFFF" stroke-opacity="0.14" stroke-width="1.8"/>
+
+  <text x="100" y="54" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="38" font-weight="700" letter-spacing="-0.6"
+        fill="#E9EFF7">Razor<tspan fill="#38BDF8">Guard</tspan></text>
+  <text x="102" y="78" font-family="Inter, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="13" font-weight="500" letter-spacing="0.3"
+        fill="#7A8798">Detect degradation · Route around it · Prove what it recovered</text>
+</svg>
