@@ -18,6 +18,133 @@ where gateways get worse as you push traffic at them.
 
 ---
 
+## In 30 seconds
+
+A payment slice degrades — one issuer, on one method, through one gateway. It is
+4% of volume, so the headline success rate barely moves and nobody pages. The
+money leaves quietly.
+
+RazorGuard watches at that grain, notices, works out what the failing slices have
+in common, moves traffic to a healthier gateway under written bounds, checks
+whether that helped, and rolls back when it did not.
+
+```bash
+git clone <this-repo> && cd razorguard
+pip install -r requirements-dev.txt
+python -m razorguard.demo          # 20s — watch one incident, decision by decision
+```
+
+**₹1,22,91,379 recovered per two days** (95% CI ₹1,17,94,730 – ₹1,27,88,027),
+measured against a control arm rather than projected. Zero of eight seeds lost
+money. 202 tests.
+
+---
+
+## How it works
+
+```mermaid
+flowchart TB
+    A["<b>1 · OBSERVE</b><br/>attempts + successes<br/>per gateway × method × issuer"]
+    A --> B["<b>2 · DETECT</b><br/>Beta posterior, cohort shrinkage<br/><i>survives thin slices and 200k tests</i>"]
+    B --> C["<b>3 · ATTRIBUTE</b><br/>lift × coverage, deterministic<br/><i>what do the failures share?</i>"]
+    C -.-> N["<b>4 · NARRATE</b><br/>LLM writes it in English<br/><i>display only</i>"]
+    C --> D{"<b>5 · GATE</b><br/>policy engine<br/>10 written bounds"}
+    D -->|allow| E["<b>6 · ACT</b><br/>shift ≤80% of the gateway's share<br/>3% canary always stays"]
+    D -->|refuse| X["<b>ESCALATE</b><br/>+ AI advises the human<br/>on what to do instead"]
+    E --> F["<b>7 · VERIFY</b><br/>did the customer get paid?<br/><i>measured across every gateway</i>"]
+    F -->|worse| G["<b>ROLLBACK</b>"]
+    F -->|healed| H["<b>RESTORE</b><br/>ease home in thirds"]
+    G --> L[("<b>AUDIT LEDGER</b><br/>every action <i>and every refusal</i>")]
+    H --> L
+    X --> L
+    E --> L
+    L -.->|next minute| A
+
+    style A fill:#F4F7FC,stroke:#3395FF,stroke-width:2px
+    style D fill:#FFFFFF,stroke:#02042B,stroke-width:2px
+    style E fill:#F4F7FC,stroke:#0F9D58,stroke-width:2px
+    style G fill:#FFF5F5,stroke:#FF4D57,stroke-width:2px
+    style X fill:#FFFBF0,stroke:#B45309,stroke-width:2px
+    style N fill:#FFFBF0,stroke:#B45309,stroke-width:1px,stroke-dasharray: 4 3
+    style L fill:#02042B,color:#FFFFFF,stroke:#3395FF,stroke-width:2px
+```
+
+Everything on the solid path is **deterministic**. The two dashed/amber boxes are
+where a language model is used, and neither can change a decision.
+
+---
+
+## What it actually looks like
+
+`python -m razorguard.demo --incident INC-0-02` — a gateway collapses at 20:05.
+This is real output, not a mock-up:
+
+```text
+ |d1 20:06  33.3%    276  #.......  ! detection Success rate on gateway 'gw_gamma' fell 27.1
+                                                points (90.5% to 63.4%). It spans 7 of 7
+                                                alarming slices, 3.0x its share of the fleet,
+                                                so the gateway is the common factor.
+                                    > proposal  shift upi/hdfc off gw_gamma onto gw_beta,
+                                                health read at slice level (356 attempts/5min)
+                                    ? decision  move up to 80% of the share gw_gamma holds
+                                                onto gw_beta, which is running 26.7pp better
+                                    * action    moved 14.4% of upi/hdfc gw_gamma -> gw_beta
+
+ |d1 20:12  25.0%     52  ........  < rollback  destination gw_beta fell to 84.1% against a
+                                                90.5% baseline on 82 attempts; reverted to
+                                                baseline weights and escalated
+
+ |d1 20:27  36.7%     79  ##......  ? decision  our last 20 shifts changed the affected keys
+                                                by -1.01pp on average, so rerouting is making
+                                                things worse rather than better. Halting all
+                                                shifts for 120 min and escalating.
+                                                rule: efficacy_breaker
+```
+
+Three things in twenty lines: it **detected and attributed** a gateway-wide
+outage, it **undid its own action** when the destination turned out worse, and
+it **stopped itself entirely** when it measured that its whole strategy had
+stopped paying.
+
+That last one is the part most systems do not have.
+
+---
+
+## "Razorpay already has Optimizer"
+
+Correct, and that is not what this is for.
+
+Razorpay [published the smart-routing work in 2021](https://arxiv.org/abs/2111.00783)
+— logistic regression for downtime prediction, a random forest scoring terminal
+success probability, 4–6% improvement in production. They have shipped this.
+Nobody needs a student's version of it.
+
+**What this submission is actually demonstrating is the harder half: how you
+would know whether any of it worked.**
+
+Routing around a degraded gateway is the easy idea. The difficult questions are
+the ones a payments team lives with afterwards — *did the customer actually get
+paid, or did we just move the failure somewhere the dashboard is prettier? Is
+that number a measurement or a projection? What did the intervention cost? When
+is the intervention worse than doing nothing, and would we notice?*
+
+This repository answers those, and each answer changed the code:
+
+- The recovery figure is a **difference between two runs of bit-identical
+  demand**, and the run refuses to report it if the arms diverge.
+- A guardrail I had defended in writing turned out to be **costing 61% of the
+  available recovery**. Measured, then changed.
+- A sweep found fleets where rerouting **loses money at every setting**. The
+  system now measures the realised effect of its own actions and halts when they
+  stop paying.
+- The gross figure is reported **net of processing fees**, because moving volume
+  between acquirers is not free.
+
+None of that is a routing algorithm. It is the evaluation discipline you would
+want around one — and it is the part that does not come free with the product.
+
+---
+
 ## Result
 
 **₹1,22,91,379 recovered per two days, 95% CI ₹1,17,94,730 – ₹1,27,88,027.**

@@ -247,6 +247,17 @@ Fit the congestion curve to real acquirer telemetry. Its knee and slope are a
 plausible shape, not an observed one, and that curve is what sets the 80% shift
 cap — so it's the most load-bearing unknown left.
 
+**"We already have Optimizer. Why would we care about this?"**
+You should not care about it as a routing algorithm — you shipped that in 2021
+and I am not going to out-engineer it in a fortnight. What this shows is the
+half that does not come free with the product: how you would *know* an
+intervention worked. The figure here is a difference between two runs of
+identical demand, not a projection. A guardrail I had defended in writing turned
+out to be costing 61% of the recovery, and I changed it because the measurement
+said so. A sweep found fleets where the whole approach loses money, so the
+system now measures its own effect and halts when it stops paying. That is the
+discipline I would bring to Optimizer, not a replacement for it.
+
 **"Could this actually run somewhere?"**
 It runs as a container today and consumes real outcomes over HTTP; `DEPLOY.md`
 has the integration. Before production it needs persistence — state is in
