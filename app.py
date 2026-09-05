@@ -19,6 +19,7 @@ import streamlit as st
 from razorguard.config import WorldConfig
 from razorguard.control_plane import ControlPlane
 from razorguard.detectors import default_detector
+from razorguard.economics import net_recovery
 from razorguard.experiment import exposure_inr
 from razorguard.policy import PolicyConfig, PolicyEngine
 from razorguard.scenarios import default_incident_plan
@@ -110,6 +111,7 @@ def run(days: int, seed: int, routing: bool):
     } for i in incidents])
 
     return {
+        "observations": out.observations,
         "attempts": out.attempts, "successes": out.successes,
         "revenue": out.revenue_inr, "actions": out.actions,
         "blocked": out.blocked, "escalated": out.escalated,
@@ -131,6 +133,38 @@ def rupees(x: float) -> str:
 
 def hhmm(minute: int) -> str:
     return f"d{minute // 1440 + 1} {(minute // 60) % 24:02d}:{minute % 60:02d}"
+
+
+
+# Colour and glyph per decision kind. The trace is the most persuasive thing
+# this system produces - it is the difference between "trust me" and "here is
+# every decision, including the ones it refused to make" - so it gets rendered
+# as cards rather than buried in a dataframe.
+CARD = {
+    "detection": ("#B45309", "#FFFBF0", "!", "detected"),
+    "proposal":  ("#5A6B8C", "#F7F9FD", ">", "proposed"),
+    "decision":  ("#3395FF", "#F4F7FC", "?", "decided"),
+    "action":    ("#0F9D58", "#F1FBF5", "*", "acted"),
+    "rollback":  ("#FF4D57", "#FFF5F5", "<", "rolled back"),
+    "restore":   ("#1B6FD1", "#F4F7FC", "+", "restored"),
+}
+
+
+def decision_card(row) -> str:
+    colour, bg, glyph, verb = CARD.get(row.kind, ("#5A6B8C", "#F7F9FD", "-", row.kind))
+    rule = (f'<span style="background:{colour};color:#fff;border-radius:4px;'
+            f'padding:1px 7px;font-size:0.68rem;font-weight:700;'
+            f'margin-left:8px;letter-spacing:.02em">{row.rule}</span>'
+            if row.rule else "")
+    return (
+        f'<div style="border-left:3px solid {colour};background:{bg};'
+        f'border-radius:0 8px 8px 0;padding:9px 14px;margin:0 0 7px 0">'
+        f'<div style="font-size:0.72rem;color:#5A6B8C;letter-spacing:.04em;'
+        f'text-transform:uppercase;font-weight:700">'
+        f'{glyph} {verb} &nbsp;·&nbsp; {hhmm(row.minute)} &nbsp;·&nbsp; '
+        f'{row.subject}{rule}</div>'
+        f'<div style="font-size:0.88rem;color:#02042B;margin-top:3px;'
+        f'line-height:1.45">{row.summary}</div></div>')
 
 
 # ---------------------------------------------------------------- sidebar
@@ -176,8 +210,11 @@ d_rev = treat["revenue"] - control["revenue"]
 ctrl_sr = control["successes"] / control["attempts"]
 treat_sr = treat["successes"] / treat["attempts"]
 
+net = net_recovery(control["observations"], treat["observations"],
+                   d_rev, d_succ)
+
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("Revenue recovered", rupees(d_rev),
+c1.metric("Recovered, net of fees", rupees(net.net_inr),
           f"{d_rev / control['exposure']:.1%} of exposure")
 c2.metric("Payments saved", f"{d_succ:,}",
           f"{(treat_sr - ctrl_sr) * 100:+.2f}pp success rate")
@@ -186,11 +223,16 @@ c3.metric("Routing actions", f"{treat['actions']:,}",
 c4.metric("Rollbacks", f"{treat['rollbacks']:,}",
           f"{treat['restores']:,} restore steps", delta_color="off")
 
-st.caption(
-    f"Identical demand in both runs: {control['attempts']:,} attempts. "
-    f"The control run detects the same incidents and is simply not permitted "
-    f"to act on them."
-)
+st.markdown(
+    f'<div class="rg-note">Gross <b>{rupees(net.gross_inr)}</b> '
+    f'&nbsp;−&nbsp; processing fees <b>{rupees(net.incremental_cost_inr)}</b> '
+    f'&nbsp;=&nbsp; net <b>{rupees(net.net_inr)}</b>. '
+    f'UPI carries zero MDR by regulation in India, so a UPI recovery is free '
+    f'and a card recovery is not.<br>'
+    f'Both arms faced <b>identical demand</b>: {control["attempts"]:,} attempts '
+    f'each. The control arm runs the same detector and raises the same alarms '
+    f'&mdash; it simply is not permitted to act.</div>',
+    unsafe_allow_html=True)
 
 # ---------------------------------------------------------------- chart
 st.subheader("Success rate, with incidents and interventions")
@@ -231,8 +273,53 @@ st.caption("Red bands are injected incidents. Dots on the baseline are routing "
            "actions and rollbacks.")
 
 # ---------------------------------------------------------------- tabs
-tab_inc, tab_audit, tab_refused = st.tabs(
-    ["Incidents", "Audit ledger", "What was refused"])
+tab_replay, tab_inc, tab_audit, tab_refused = st.tabs(
+    ["Incident replay", "Incidents", "Audit ledger", "What was refused"])
+
+with tab_replay:
+    st.markdown("#### Watch one incident, decision by decision")
+    st.markdown(
+        '<div class="rg-note">Every line below was written by the control '
+        'plane at the time. Nothing here is composed for the demo &mdash; '
+        'including the refusals, which are the half worth reading.</div>',
+        unsafe_allow_html=True)
+    st.write("")
+
+    inc_df = treat["incidents"]
+    acted_min = treat["ledger"][treat["ledger"]["kind"] == "action"]["minute"]
+    labels = []
+    for r in inc_df.itertuples():
+        n = int(((acted_min >= r.start) & (acted_min < r.end)).sum())
+        labels.append(f"{r.id}  ·  {r.kind}  ·  {hhmm(r.start)}  ·  "
+                      f"{n} action(s)")
+
+    # Default to an incident that actually provoked a response, so the first
+    # thing a visitor sees is the whole loop rather than a quiet detection.
+    default = next((i for i, lab in enumerate(labels)
+                    if not lab.endswith("0 action(s)")), 0)
+    choice = st.selectbox("Incident", range(len(labels)),
+                          format_func=lambda i: labels[i], index=default)
+    row = inc_df.iloc[choice]
+
+    lo, hi = int(row["start"]) - 8, int(row["end"]) + 30
+    window = treat["ledger"]
+    window = window[(window["minute"] >= lo) & (window["minute"] <= hi)]
+
+    kinds = st.multiselect(
+        "Show", ["detection", "proposal", "decision", "action", "rollback",
+                 "restore"],
+        default=["detection", "decision", "action", "rollback"])
+    if kinds:
+        window = window[window["kind"].isin(kinds)]
+
+    if window.empty:
+        st.info("No ledger entries in this window for the selected kinds.")
+    else:
+        st.markdown(
+            "".join(decision_card(r) for r in window.head(60).itertuples()),
+            unsafe_allow_html=True)
+        if len(window) > 60:
+            st.caption(f"{len(window) - 60} further entries in this window.")
 
 with tab_inc:
     inc = treat["incidents"].copy()

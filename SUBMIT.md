@@ -14,7 +14,7 @@ Run these before recording anything. All four must pass from a **fresh clone**,
 because that is what a reviewer will have.
 
 ```bash
-git clone <your-repo-url> && cd razorpay
+git clone <your-repo-url> && cd razorguard
 pip install -r requirements-dev.txt
 
 pytest -q                                    # expect: 202 passed
@@ -33,6 +33,20 @@ streamlit run app.py                         # expect: console loads
 - [ ] `bench/results/*.json` are committed, so a reviewer sees every number
       without running anything
 - [ ] repo is **public**
+- [ ] **Razorpay test keys obtained and `--live` run once** — free, no KYC:
+      sign up at dashboard.razorpay.com, confirm the toggle reads *Test Mode*,
+      then Settings → API Keys → Generate Test Key. This is the last claim in
+      the repository that is written but unproven, and it takes ten minutes:
+
+      ```bash
+      export RAZORPAY_KEY_ID=rzp_test_...
+      export RAZORPAY_KEY_SECRET=...
+      python -m razorguard.execute --limit 6 --live
+      ```
+
+      Screenshot the real order IDs. A key not starting `rzp_test_` is refused
+      by the executor, so there is no way to point this at a live account by
+      accident.
 
 ---
 
@@ -82,12 +96,27 @@ or the README.
 
 Screen recording with voice. No slides. Every command below is real and runs.
 
-**0:00–0:30 — the problem, concretely**
+**0:00–0:35 — the problem, and the thing most people would hide**
+
+Open with the limitation. Say it before anyone can find it, in your own words —
+it reframes everything that follows as measured rather than sold.
 
 > "A payment slice degrades — one issuer, one method, one gateway. If that slice
 > is 4% of volume and it collapses from 96% to 40%, the headline success rate
 > moves two points. That's inside normal daily variation. Nobody pages, and the
-> money leaves quietly."
+> money leaves quietly.
+>
+> I built a system that catches that and recovers ₹1.2 crore over two days.
+> **I'm also going to show you the gateway fleets where the same system loses
+> money at every setting**, because I measured that too, and the system now
+> detects it and shuts itself down. That measurement is the most useful thing
+> in this project."
+
+Why this works: every other submission will claim their system always helps.
+Yours states its own failure mode in the first thirty seconds and then shows
+the machinery built to handle it. A judge who hears the weakness from you reads
+the rest as honest. A judge who finds it themselves on slide nine reads the rest
+as marketing.
 
 **0:30–1:45 — watch it happen**
 
@@ -200,8 +229,12 @@ python -m razorguard.investigate "why did traffic move off gw_beta at 03:12, and
 > 202 property tests. Every number in the README is printed by a command in the
 > repo — none of it is typed by hand."
 
-**Do not** show: the Streamlit console (it's slower than the CLI and says less),
-or the code. Show behaviour and numbers.
+**If you have a spare 15 seconds**, cut to `streamlit run app.py` → the
+**Incident replay** tab. Same trace as the CLI, rendered as colour-coded
+decision cards on the Razorpay palette — detections amber, actions green,
+rollbacks red. It shows well on video where a terminal can look flat.
+
+**Do not** show the code. Show behaviour and numbers.
 
 ---
 
@@ -265,6 +298,17 @@ memory, so a restart is a three-hour blind spot while baselines refill —
 authentication on `/ingest`, and the capacity curve fitted to real acquirers
 rather than the plausible shape it uses now. None are hard; none are done, and
 they are listed rather than glossed.
+
+**"Your own report says this loses money on some gateway fleets."**
+It does, and I put that in the first thirty seconds of the video rather than
+waiting to be asked. Those fleets are already past their capacity knee before
+anything goes wrong, so there is no spare headroom to route into and shifting
+traffic only concentrates load. No per-action guardrail can see that — every
+individual shift looks reasonable. So the system now measures the realised
+effect of its own shifts and halts when they stop paying. It limits the damage
+rather than removing it, and the honest conclusion is that this needs acquirers
+with spare capacity to be worth deploying. I would rather ship that sentence
+than a number that only holds on the fleets I happened to test.
 
 **"What's the weakest part?"**
 That same curve, and that the confidence interval covers traffic randomness but
