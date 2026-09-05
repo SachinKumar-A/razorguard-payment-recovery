@@ -227,8 +227,7 @@ def _voiceover_segments():
     from razorguard.console_data import incident_summary, run
     import docs.voiceover as vo
 
-    vo.SEGMENTS.clear()
-    vo.CLOCK_S = 0.0
+    vo.SCRIPT.reset()
     f = Facts()
     control = run(f.days, 7, routing=False)
     treat = run(f.days, 7, routing=True)
@@ -240,11 +239,9 @@ def test_the_voiceover_fits_the_recording():
     """569 seconds of speech in a 610 second take leaves about forty seconds
     of pause. Past the runtime there is nowhere for the words to go."""
     vo, _ = _voiceover_segments()
-    words = sum(w for _clock, _title, w in vo.SEGMENTS)
-    speech = words / vo.WPM * 60
-    assert speech < vo.RUNTIME, f"{speech:.0f}s of speech in {vo.RUNTIME}s"
-    assert vo.RUNTIME - speech > 25, "no room left to breathe between segments"
-    assert len(vo.SEGMENTS) == 11
+    assert vo.SCRIPT.fits(), (f"{vo.SCRIPT.speech_s:.0f}s of speech in "
+                              f"{vo.SCRIPT.runtime}s leaves no room to breathe")
+    assert len(vo.SCRIPT.segments) == 11
 
 
 def test_the_voiceover_quotes_the_benchmarks(results):
@@ -255,8 +252,7 @@ def test_the_voiceover_quotes_the_benchmarks(results):
     from razorguard.console_data import incident_summary, run
     import docs.voiceover as vo
 
-    vo.SEGMENTS.clear()
-    vo.CLOCK_S = 0.0
+    vo.SCRIPT.reset()
     f = Facts()
     control = run(f.days, 7, routing=False)
     treat = run(f.days, 7, routing=True)
@@ -285,4 +281,44 @@ def test_the_voiceover_quotes_the_benchmarks(results):
                    f"{worst['in_sr']:.1%}",
                    f"{treat['audit_events']:,}",
                    str(treat["rollbacks"])):
+        assert figure in joined, figure
+
+
+def test_the_six_minute_pitch_fits_and_is_honest_about_the_incident(results):
+    """The error this script exists to correct: the run's total figure said
+    over a single incident's card, which inflates that card more than three
+    times and is contradicted by the page underneath it."""
+    from docs.build_docs import Facts, rupees
+    from razorguard.console_data import incident_summary, run
+    import docs.pitch6 as p6
+
+    f = Facts()
+    control = run(f.days, 7, routing=False)
+    treat = run(f.days, 7, routing=True)
+    worst = incident_summary(control, treat)[0]
+
+    spoken = []
+    original = p6.SCRIPT.segment
+
+    def capture(title, screen, paragraphs, note=""):
+        spoken.extend(paragraphs)
+        return original(title, screen, paragraphs, note)
+
+    p6.SCRIPT.reset()
+    p6.SCRIPT.segment = capture
+    try:
+        p6.narration(f, worst, treat, control)
+    finally:
+        p6.SCRIPT.segment = original
+
+    assert p6.SCRIPT.fits(), f"{p6.SCRIPT.speech_s:.0f}s does not fit 6:00"
+    joined = " ".join(spoken)
+
+    # The incident's own recovery, next to the twenty-two steps that earned it.
+    assert rupees(worst["recovered"]) in joined
+    assert f"{worst['capture']:.0%}" in joined
+    # And the refusal split, rather than the claim that all of them named a rule.
+    ruled = sum(treat["blocked_by_rule"].values())
+    refused = treat["blocked"] + treat["escalated"]
+    for figure in (str(refused), str(ruled), str(treat["rollbacks"])):
         assert figure in joined, figure

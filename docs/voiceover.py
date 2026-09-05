@@ -20,80 +20,22 @@ import sys
 from datetime import date
 from typing import List
 
-from reportlab.lib import colors
-from reportlab.platypus import (KeepTogether, NextPageTemplate, PageBreak,
-                                Paragraph, Spacer, Table, TableStyle)
+from reportlab.platypus import (NextPageTemplate, PageBreak, Spacer, Table,
+                                TableStyle)
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from docs.build_docs import (ACCENT, ACCENT_DARK, OUT, RULE,  # noqa: E402
+from docs.build_docs import (ACCENT, ACCENT_DARK, OUT,  # noqa: E402
                              Doc, Facts, P, bullets, kpis, logo_drawing,
                              rupees, table)
-from docs.pitch import BEAT, CLOCK, CUE, NOTE, SAY  # noqa: E402
+from docs.script_kit import Script  # noqa: E402
 from razorguard.console_data import incident_summary, run  # noqa: E402
 
-SEGMENTS: List = []   # (clock, title, words), filled by segment()
-CLOCK_S = 0.0         # running start time, derived not typed
-PAUSE = 3.6           # seconds of breathing room between segments
-WPM = 145          # a comfortable voiceover pace over a screen recording
-RUNTIME = 610      # seconds; the recording is 10:10
-
-
-def words_in(paragraphs: List[str]) -> int:
-    import re
-    n = 0
-    for block in paragraphs:
-        plain = re.sub(r"\[[^\]]*\]", "", re.sub(r"<[^>]+>", "", block))
-        for entity in ("&mdash;", "&rarr;", "&nbsp;", "&middot;"):
-            plain = plain.replace(entity, " ")
-        n += len(plain.split())
-    return n
-
-
-def segment(title: str, screen: str, paragraphs: List[str],
-            note: str = "") -> KeepTogether:
-    """One segment: when it starts, what is on screen, and what to read.
-
-    The start time is derived from the words that came before it rather than
-    typed, because a hand-written timecode is a number that drifts the moment
-    a sentence is cut - and this script has been cut twice already.
-    """
-    global CLOCK_S
-    spoken = words_in(paragraphs)
-    clock = f"{int(CLOCK_S) // 60}:{int(CLOCK_S) % 60:02d}"
-    CLOCK_S += spoken / WPM * 60 + PAUSE
-    SEGMENTS.append((clock, title, spoken))
-    head = Table(
-        [[Paragraph(clock, CLOCK),
-          Paragraph(f"{title} &nbsp;<font color='#8A97AC'>&middot; "
-                    f"{spoken} words &middot; ~{spoken / WPM * 60:.0f}s</font>",
-                    BEAT)]],
-        colWidths=[62, 433], hAlign="LEFT",
-        style=TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-            ("TOPPADDING", (0, 0), (-1, -1), 0)]))
-
-    rows = [[Paragraph(f"ON SCREEN &nbsp; {screen}", CUE)]]
-    rows += [[Paragraph(text, SAY)] for text in paragraphs]
-    if note:
-        rows.append([Paragraph(note, NOTE)])
-    style = [
-        ("BACKGROUND", (0, 0), (0, 0), colors.HexColor("#EAF2FE")),
-        ("BACKGROUND", (0, 1), (0, -1), colors.white),
-        ("LINEBEFORE", (0, 0), (0, -1), 2.4, ACCENT),
-        ("BOX", (0, 0), (-1, -1), 0.6, RULE),
-        ("LINEABOVE", (0, 1), (0, 1), 0.6, RULE),
-        ("LEFTPADDING", (0, 0), (-1, -1), 11),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 11),
-        ("TOPPADDING", (0, 0), (-1, -1), 7),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-    ]
-    if note:
-        style.append(("LINEABOVE", (0, -1), (0, -1), 0.6, RULE))
-    body = Table(rows, colWidths=[495], hAlign="LEFT", style=TableStyle(style))
-    return KeepTogether([head, body, Spacer(1, 12)])
+# The block builder, the timing and the reading-at-a-distance styles are
+# shared with the two pitch scripts; only the words below are particular to
+# this one.
+SCRIPT = Script(wpm=145, runtime=610, pause=3.6)
+segment = SCRIPT.segment
 
 
 def narration(f: Facts, worst, treat, control) -> List:
@@ -250,11 +192,10 @@ def narration(f: Facts, worst, treat, control) -> List:
     return a
 
 
-def front(f: Facts, segments: List) -> List:
+def front(f: Facts) -> List:
     a: List = []
     A = a.append
-    spoken = sum(w for _c, _t, w in SEGMENTS)
-    speech = spoken / WPM * 60
+    spoken, speech = SCRIPT.spoken, SCRIPT.speech_s
 
     A(Spacer(1, 96))
     A(logo_drawing(1.05))
@@ -269,11 +210,11 @@ def front(f: Facts, segments: List) -> List:
     A(P(f"Eleven segments, <b>{spoken} words</b>. At a normal voiceover pace "
         f"that is about <b>{speech / 60:.0f} minutes {speech % 60:.0f} "
         f"seconds</b> of speech inside a <b>10:10</b> recording, which leaves "
-        f"roughly <b>{RUNTIME - speech:.0f} seconds</b> of pause spread across the eleven breaks. That is the right shape for narration over a screen recording: it should breathe, not race.", "lead"))
+        f"roughly <b>{SCRIPT.slack_s:.0f} seconds</b> of pause spread across the eleven breaks. That is the right shape for narration over a screen recording: it should breathe, not race.", "lead"))
     A(Spacer(1, 16))
     A(kpis([(f"{spoken}", "words to read"),
             (f"{speech / 60:.1f} min", "of speech at 145 wpm"),
-            (f"{RUNTIME - speech:.0f} s", "of pause to spend")]))
+            (f"{SCRIPT.slack_s:.0f} s", "of pause to spend")]))
     A(Spacer(1, 20))
     A(P("A Sachin Kumar &nbsp;&middot;&nbsp; Razorpay AI Buildathon, Track 03 "
         f"&nbsp;&middot;&nbsp; {date.today().strftime('%d %B %Y')}", "small"))
@@ -292,9 +233,7 @@ def front(f: Facts, segments: List) -> List:
     ]))
 
     A(P("The running order", "h1"))
-    A(table([["Starts", "Segment", "Words", "Speech"]] +
-            [[c, t, str(w), f"{w / WPM * 60:.0f}s"] for c, t, w in SEGMENTS],
-            [50, 300, 55, 90], align_right=(2, 3)))
+    A(SCRIPT.running_order())
     A(P("The four widest segments are the introduction, the settings page, the overview and the decision record &mdash; between them they are the argument. Everything after the decision record is evidence for it, and each of those can be shortened without losing the thread.",
         "small"))
     A(PageBreak())
@@ -342,16 +281,17 @@ def main() -> int:
     treat = run(f.days, 7, routing=True)
     worst = incident_summary(control, treat)[0]
 
+    SCRIPT.reset()
     body = narration(f, worst, treat, control)
     doc = Doc(os.path.join(OUT, "RazorGuard-Voiceover-10min.pdf"),
               "RazorGuard - voiceover script", "Voiceover script")
-    doc.build(front(f, body) + body + appendix(f, worst))
+    doc.build(front(f) + body + appendix(f, worst))
 
-    spoken = sum(w for _c, _t, w in SEGMENTS)
     print(f"wrote {doc.filename}")
-    print(f"  {len(SEGMENTS)} segments, {spoken} words, "
-          f"{spoken / WPM * 60:.0f}s of speech in a {RUNTIME}s recording "
-          f"({RUNTIME - spoken / WPM * 60:.0f}s of pause)")
+    print(f"  {len(SCRIPT.segments)} segments, {SCRIPT.spoken} words, "
+          f"{SCRIPT.speech_s:.0f}s of speech in a {SCRIPT.runtime}s recording "
+          f"({SCRIPT.slack_s:.0f}s of pause) "
+          f"{'OK' if SCRIPT.fits() else 'TOO LONG'}")
     return 0
 
 
