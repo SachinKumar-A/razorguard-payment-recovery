@@ -3,7 +3,7 @@
 
 **Detect payment degradation, route around it, prove what it recovered.**
 
-Razorpay AI Buildathon — Track 03, AI Revenue Recovery.
+AI Revenue Recovery.
 
 A payment slice degrades — one issuer, on one method, through one gateway — and
 money bleeds out for as long as nobody notices. RazorGuard notices, works out
